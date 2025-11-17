@@ -9,8 +9,7 @@ pub mod utils;
 #[wasm_bindgen(start)]
 pub fn init() {
     // パニック時のエラーメッセージを改善（開発時のみ）
-    #[cfg(feature = "console_error_panic_hook")]
-    console_error_panic_hook::set_once();
+    // console_error_panic_hookが必要な場合はCargo.tomlに追加してください
 }
 
 #[wasm_bindgen]
