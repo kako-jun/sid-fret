@@ -1,5 +1,9 @@
 # sid-fret
 
+[![CI](https://github.com/kako-jun/sid-fret/actions/workflows/ci.yml/badge.svg)](https://github.com/kako-jun/sid-fret/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/sid-fret.svg)](https://crates.io/crates/sid-fret)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ベースギター特化の音楽理論ライブラリ（Rust/WASM）
 
 ## 概要
