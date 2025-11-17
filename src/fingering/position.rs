@@ -78,11 +78,11 @@ impl FingeringPattern {
 
             // 同じ弦の場合はフレット間距離
             if prev.string == curr.string {
-                total += (prev.fret as i32 - curr.fret as i32).abs() as u32;
+                total += (prev.fret as i32 - curr.fret as i32).unsigned_abs();
             } else {
                 // 異なる弦の場合は弦移動ペナルティ + フレット差
                 total += 1; // 弦移動ペナルティ
-                total += (prev.fret as i32 - curr.fret as i32).abs() as u32 / 2;
+                total += (prev.fret as i32 - curr.fret as i32).unsigned_abs() / 2;
             }
         }
         total

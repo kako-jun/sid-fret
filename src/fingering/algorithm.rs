@@ -1,16 +1,16 @@
-use wasm_bindgen::prelude::*;
-use serde::{Deserialize, Serialize};
-use super::position::{FretPosition, FingeringPattern};
+use super::position::{FingeringPattern, FretPosition};
 use super::scoring::AlgorithmWeights;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 /// 運指アルゴリズムの種類
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FingeringMode {
-    Shortest,        // 最短移動優先
-    PositionStable,  // ポジション固定優先
-    StringPriority,  // 弦移動優先（横移動より縦移動）
-    OpenString,      // 開放弦活用
-    Balanced,        // バランス型（スコアリング方式）
+    Shortest,       // 最短移動優先
+    PositionStable, // ポジション固定優先
+    StringPriority, // 弦移動優先（横移動より縦移動）
+    OpenString,     // 開放弦活用
+    Balanced,       // バランス型（スコアリング方式）
 }
 
 impl FingeringMode {
@@ -57,17 +57,17 @@ pub fn generate_all_positions(pitch: u8) -> Vec<FretPosition> {
     }
 
     // A弦（3弦）: 開放=5半音
-    if pitch >= 5 && pitch <= 29 {
+    if (5..=29).contains(&pitch) {
         positions.push(FretPosition::new(3, pitch - 5));
     }
 
     // D弦（2弦）: 開放=10半音
-    if pitch >= 10 && pitch <= 34 {
+    if (10..=34).contains(&pitch) {
         positions.push(FretPosition::new(2, pitch - 10));
     }
 
     // G弦（1弦）: 開放=15半音
-    if pitch >= 15 && pitch <= 39 {
+    if (15..=39).contains(&pitch) {
         positions.push(FretPosition::new(1, pitch - 15));
     }
 

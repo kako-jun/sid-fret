@@ -1,14 +1,11 @@
-use wasm_bindgen::prelude::*;
 use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
 /// コード名のエイリアスを取得（日本語記譜対応）
 #[wasm_bindgen]
 pub fn get_chord_name_aliases(chord_name: &str) -> Vec<JsValue> {
     let aliases = get_chord_name_aliases_internal(chord_name);
-    aliases
-        .into_iter()
-        .map(|s| JsValue::from_str(&s))
-        .collect()
+    aliases.into_iter().map(|s| JsValue::from_str(&s)).collect()
 }
 
 /// コード名エイリアスの内部実装

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::position::FingeringPattern;
+use serde::{Deserialize, Serialize};
 
 /// 運指アルゴリズムの重み設定
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,0 +1,31 @@
+{
+  "name": "sid-fret",
+  "version": "0.1.0",
+  "description": "Bass guitar fingering and music theory library (Rust/WASM)",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "cargo clippy -- -D warnings",
+    "format": "cargo fmt",
+    "format:check": "cargo fmt -- --check",
+    "test": "cargo test",
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build:wasm:nodejs": "wasm-pack build --target nodejs --out-dir pkg-node"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kako-jun/sid-fret"
+  },
+  "keywords": [
+    "bass",
+    "guitar",
+    "fingering",
+    "music-theory",
+    "wasm",
+    "rust"
+  ],
+  "author": "kako-jun",
+  "license": "MIT"
+}

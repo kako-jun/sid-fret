@@ -56,8 +56,18 @@ fn get_absolute_pitch_index(pitch: &str) -> Option<usize> {
 
     // 半音階での位置を特定
     let chromatic = vec![
-        "C", "C＃/D♭", "D", "D＃/E♭", "E", "F",
-        "F＃/G♭", "G", "G＃/A♭", "A", "A＃/B♭", "B",
+        "C",
+        "C＃/D♭",
+        "D",
+        "D＃/E♭",
+        "E",
+        "F",
+        "F＃/G♭",
+        "G",
+        "G＃/A♭",
+        "A",
+        "A＃/B♭",
+        "B",
     ];
 
     let idx = chromatic

@@ -1,5 +1,5 @@
-pub mod functional;
 pub mod cadence;
+pub mod functional;
 
-pub use functional::*;
 pub use cadence::*;
+pub use functional::*;

@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Check if any .rs files are staged
+if git diff --cached --name-only | grep -q '\.rs$'; then
+  echo "Running Rust formatting and linting..."
+  cargo fmt || exit 1
+  cargo clippy --fix --allow-dirty --allow-staged || exit 1
+  git add -u
+fi

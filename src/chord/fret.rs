@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 /// フレット情報（インターバル名と半音数のペア）
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,10 +17,26 @@ pub struct BassString {
 
 /// 4弦ベースの標準チューニング（E1, A1, D2, G2）
 pub const BASS_STRINGS: [BassString; 4] = [
-    BassString { name: "G", min_fret: 15, max_fret: 39 }, // 1弦
-    BassString { name: "D", min_fret: 10, max_fret: 34 }, // 2弦
-    BassString { name: "A", min_fret: 5, max_fret: 29 },  // 3弦
-    BassString { name: "E", min_fret: 0, max_fret: 24 },  // 4弦
+    BassString {
+        name: "G",
+        min_fret: 15,
+        max_fret: 39,
+    }, // 1弦
+    BassString {
+        name: "D",
+        min_fret: 10,
+        max_fret: 34,
+    }, // 2弦
+    BassString {
+        name: "A",
+        min_fret: 5,
+        max_fret: 29,
+    }, // 3弦
+    BassString {
+        name: "E",
+        min_fret: 0,
+        max_fret: 24,
+    }, // 4弦
 ];
 
 /// ルート音から半音オフセットを取得
@@ -120,7 +136,7 @@ pub fn convert_frets_to_positions(frets: &[Fret], offset: i32) -> Vec<Vec<i32>> 
         // 4オクターブ分展開（0, 12, 24, 36半音）
         let octave_frets: Vec<i32> = (0..4)
             .map(|octave| base_fret + offset + octave * 12)
-            .filter(|&f| f >= 0 && f < 40)
+            .filter(|&f| (0..40).contains(&f))
             .collect();
 
         // 各弦でのポジションを計算
@@ -159,8 +175,18 @@ pub fn get_pitches(root: &str, frets: &[Fret], offset: i32) -> Vec<Vec<String>> 
 /// ルート音から半音階のピッチマップを取得
 fn get_pitch_map(root: &str) -> Vec<&'static str> {
     let chromatic = vec![
-        "C", "C＃/D♭", "D", "D＃/E♭", "E", "F",
-        "F＃/G♭", "G", "G＃/A♭", "A", "A＃/B♭", "B",
+        "C",
+        "C＃/D♭",
+        "D",
+        "D＃/E♭",
+        "E",
+        "F",
+        "F＃/G♭",
+        "G",
+        "G＃/A♭",
+        "A",
+        "A＃/B♭",
+        "B",
     ];
 
     let offset = get_fret_offset(root) as usize;
@@ -208,8 +234,14 @@ mod tests {
     #[test]
     fn test_convert_frets_to_positions() {
         let frets = vec![
-            Fret { interval: "1".to_string(), semitones: 0 },
-            Fret { interval: "3".to_string(), semitones: 4 },
+            Fret {
+                interval: "1".to_string(),
+                semitones: 0,
+            },
+            Fret {
+                interval: "3".to_string(),
+                semitones: 4,
+            },
         ];
         let positions = convert_frets_to_positions(&frets, 0);
         assert_eq!(positions.len(), 2);

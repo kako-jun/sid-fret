@@ -1,0 +1,5 @@
+# Clippy Configuration for sid-fret
+
+# Configure thresholds
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
