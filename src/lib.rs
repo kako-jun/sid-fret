@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 
 pub mod chord;
 pub mod core;
+pub mod fingering;
 pub mod harmony;
 pub mod scale;
 pub mod utils;
