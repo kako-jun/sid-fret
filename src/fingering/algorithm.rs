@@ -1,6 +1,7 @@
 use super::position::{FingeringPattern, FretPosition};
 use super::scoring::AlgorithmWeights;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use wasm_bindgen::prelude::*;
 
 /// 運指アルゴリズムの種類
@@ -13,18 +14,22 @@ pub enum FingeringMode {
     Balanced,       // バランス型（スコアリング方式）
 }
 
-impl FingeringMode {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for FingeringMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "shortest" => Some(Self::Shortest),
-            "position" | "position-stable" => Some(Self::PositionStable),
-            "string" | "string-priority" => Some(Self::StringPriority),
-            "open" | "open-string" => Some(Self::OpenString),
-            "balanced" => Some(Self::Balanced),
-            _ => None,
+            "shortest" => Ok(Self::Shortest),
+            "position" | "position-stable" => Ok(Self::PositionStable),
+            "string" | "string-priority" => Ok(Self::StringPriority),
+            "open" | "open-string" => Ok(Self::OpenString),
+            "balanced" => Ok(Self::Balanced),
+            _ => Err(()),
         }
     }
+}
 
+impl FingeringMode {
     pub fn to_str(&self) -> &'static str {
         match self {
             Self::Shortest => "shortest",
@@ -253,7 +258,7 @@ pub fn calculate_balanced(pitches: &[u8]) -> FingeringPattern {
 /// WASM公開API: 運指計算
 #[wasm_bindgen]
 pub fn calculate_fingering(pitches: Vec<u8>, mode: &str) -> JsValue {
-    let fingering_mode = FingeringMode::from_str(mode).unwrap_or(FingeringMode::Balanced);
+    let fingering_mode = mode.parse().unwrap_or(FingeringMode::Balanced);
 
     let pattern = match fingering_mode {
         FingeringMode::Shortest => calculate_shortest_path(&pitches),
@@ -311,17 +316,17 @@ mod tests {
     #[test]
     fn test_fingering_mode_from_str() {
         assert_eq!(
-            FingeringMode::from_str("shortest"),
-            Some(FingeringMode::Shortest)
+            "shortest".parse::<FingeringMode>(),
+            Ok(FingeringMode::Shortest)
         );
         assert_eq!(
-            FingeringMode::from_str("position"),
-            Some(FingeringMode::PositionStable)
+            "position".parse::<FingeringMode>(),
+            Ok(FingeringMode::PositionStable)
         );
         assert_eq!(
-            FingeringMode::from_str("open-string"),
-            Some(FingeringMode::OpenString)
+            "open-string".parse::<FingeringMode>(),
+            Ok(FingeringMode::OpenString)
         );
-        assert_eq!(FingeringMode::from_str("invalid"), None);
+        assert!("invalid".parse::<FingeringMode>().is_err());
     }
 }

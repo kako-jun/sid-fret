@@ -38,7 +38,7 @@ fn get_chord_name_aliases_internal(chord_name: &str) -> Vec<String> {
     if let Some(aliases) = type_alias_map.get(chord_type.as_str()) {
         aliases
             .iter()
-            .map(|alias| format!("{}{}", root, alias))
+            .map(|alias| format!("{root}{alias}"))
             .collect()
     } else {
         vec![chord_name.to_string()]

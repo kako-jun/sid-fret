@@ -174,7 +174,7 @@ pub fn get_pitches(root: &str, frets: &[Fret], offset: i32) -> Vec<Vec<String>> 
 
 /// ルート音から半音階のピッチマップを取得
 fn get_pitch_map(root: &str) -> Vec<&'static str> {
-    let chromatic = vec![
+    let chromatic = [
         "C",
         "C＃/D♭",
         "D",

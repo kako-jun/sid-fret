@@ -55,7 +55,7 @@ fn get_absolute_pitch_index(pitch: &str) -> Option<usize> {
     let octave: usize = octave_str.parse().ok()?;
 
     // 半音階での位置を特定
-    let chromatic = vec![
+    let chromatic = [
         "C",
         "C＃/D♭",
         "D",
