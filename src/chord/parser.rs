@@ -62,78 +62,86 @@ pub struct Fret {
     pub fret: i32,
 }
 
-/// フレット配列を取得（chordUtil.ts の getFrets() に相当）
-pub fn get_frets(
-    m3: bool,
-    sus4: bool,
-    dim5: bool,
-    maj7: bool,
-    m7: bool,
-    aug7: bool,
-) -> Vec<Fret> {
-    let mut frets = Vec::new();
+/// コードタイプ文字列からフレット配列を生成
+/// chord_type: "", "m", "7", "m7", "maj7", "dim", "aug", "sus4", "6", "m6",
+///             "9", "m9", "maj9", "add9", "sus2", "dim7", "m7b5",
+///             "aug7", "7sus4", "m_maj7", "7b9", "7#9"
+pub fn get_frets(chord_type: &str) -> Vec<Fret> {
+    let intervals: Vec<(&str, i32)> = match chord_type {
+        // トライアド
+        "" | "maj" => vec![("1", 0), ("3", 4), ("5", 7)],
+        "m" => vec![("1", 0), ("♭3", 3), ("5", 7)],
+        "dim" => vec![("1", 0), ("♭3", 3), ("♭5", 6)],
+        "aug" => vec![("1", 0), ("3", 4), ("＃5", 8)],
+        "sus4" => vec![("1", 0), ("4", 5), ("5", 7)],
+        "sus2" => vec![("1", 0), ("2", 2), ("5", 7)],
 
-    // Root
-    frets.push(Fret {
-        interval: "1".to_string(),
-        fret: 0,
-    });
+        // 7th
+        "7" => vec![("1", 0), ("3", 4), ("5", 7), ("♭7", 10)],
+        "m7" => vec![("1", 0), ("♭3", 3), ("5", 7), ("♭7", 10)],
+        "maj7" | "M7" => vec![("1", 0), ("3", 4), ("5", 7), ("7", 11)],
+        "m_maj7" | "mM7" => vec![("1", 0), ("♭3", 3), ("5", 7), ("7", 11)],
+        "dim7" => vec![("1", 0), ("♭3", 3), ("♭5", 6), ("♭♭7", 9)],
+        "m7b5" => vec![("1", 0), ("♭3", 3), ("♭5", 6), ("♭7", 10)],
+        "aug7" => vec![("1", 0), ("3", 4), ("＃5", 8), ("♭7", 10)],
+        "7sus4" => vec![("1", 0), ("4", 5), ("5", 7), ("♭7", 10)],
 
-    // 3rd
-    if sus4 {
-        frets.push(Fret {
-            interval: "4".to_string(),
-            fret: 5,
-        });
-    } else if m3 {
-        frets.push(Fret {
-            interval: "♭3".to_string(),
-            fret: 3,
-        });
-    } else {
-        frets.push(Fret {
-            interval: "3".to_string(),
-            fret: 4,
-        });
+        // 6th
+        "6" => vec![("1", 0), ("3", 4), ("5", 7), ("6", 9)],
+        "m6" => vec![("1", 0), ("♭3", 3), ("5", 7), ("6", 9)],
+
+        // 9th
+        "9" => vec![("1", 0), ("3", 4), ("5", 7), ("♭7", 10), ("9", 14)],
+        "m9" => vec![("1", 0), ("♭3", 3), ("5", 7), ("♭7", 10), ("9", 14)],
+        "maj9" | "M9" => vec![("1", 0), ("3", 4), ("5", 7), ("7", 11), ("9", 14)],
+        "add9" => vec![("1", 0), ("3", 4), ("5", 7), ("9", 14)],
+
+        // Altered
+        "7b9" => vec![("1", 0), ("3", 4), ("5", 7), ("♭7", 10), ("♭9", 13)],
+        "7#9" => vec![("1", 0), ("3", 4), ("5", 7), ("♭7", 10), ("＃9", 15)],
+
+        // フォールバック: メジャートライアド
+        _ => vec![("1", 0), ("3", 4), ("5", 7)],
+    };
+
+    intervals
+        .into_iter()
+        .map(|(interval, fret)| Fret {
+            interval: interval.to_string(),
+            fret,
+        })
+        .collect()
+}
+
+/// コード名からルート音とコードタイプを分離
+/// "Cm7" -> ("C", "m7"), "F＃dim7" -> ("F＃", "dim7"), "B♭7sus4" -> ("B♭", "7sus4")
+pub fn parse_chord_type(chord: &str) -> (String, String) {
+    let root = get_root_note(chord);
+    if root.is_empty() {
+        return (String::new(), chord.to_string());
     }
-
-    // 5th
-    if aug7 {
-        frets.push(Fret {
-            interval: "＃5".to_string(),
-            fret: 8,
-        });
-    } else if dim5 {
-        frets.push(Fret {
-            interval: "♭5".to_string(),
-            fret: 6,
-        });
-    } else {
-        frets.push(Fret {
-            interval: "5".to_string(),
-            fret: 7,
-        });
-    }
-
-    // 7th
-    if aug7 {
-        frets.push(Fret {
-            interval: "♭7".to_string(),
-            fret: 10,
-        });
-    } else if maj7 {
-        frets.push(Fret {
-            interval: "7".to_string(),
-            fret: 11,
-        });
-    } else if m7 {
-        frets.push(Fret {
-            interval: "♭7".to_string(),
-            fret: 10,
-        });
-    }
-
-    frets
+    let chord_type = &chord[root.len()..];
+    // 正規化: 一般的な表記をマッチ用に変換
+    let normalized = match chord_type {
+        "M7" | "△7" => "maj7",
+        "M9" | "△9" => "maj9",
+        "mM7" | "m(maj7)" | "-M7" => "m_maj7",
+        "-" => "m",
+        "-7" => "m7",
+        "-9" => "m9",
+        "+" => "aug",
+        "+7" => "aug7",
+        "o" => "dim",
+        "o7" | "°7" => "dim7",
+        "ø" | "ø7" | "m7♭5" => "m7b5",
+        "sus" => "sus4",
+        "7sus" => "7sus4",
+        "-6" => "m6",
+        "7♭9" => "7b9",
+        "7＃9" => "7#9",
+        other => other,
+    };
+    (root, normalized.to_string())
 }
 
 /// ピッチマップ（全12キー）
@@ -188,10 +196,54 @@ mod tests {
     #[test]
     fn test_get_frets() {
         // Major triad
-        let frets = get_frets(false, false, false, false, false, false);
+        let frets = get_frets("");
         assert_eq!(frets.len(), 3);
         assert_eq!(frets[0].interval, "1");
         assert_eq!(frets[1].interval, "3");
         assert_eq!(frets[2].interval, "5");
+
+        // Minor triad
+        let frets = get_frets("m");
+        assert_eq!(frets.len(), 3);
+        assert_eq!(frets[1].fret, 3); // ♭3
+
+        // dim7 (4 notes)
+        let frets = get_frets("dim7");
+        assert_eq!(frets.len(), 4);
+        assert_eq!(frets[3].fret, 9); // ♭♭7
+
+        // 9th (5 notes)
+        let frets = get_frets("9");
+        assert_eq!(frets.len(), 5);
+        assert_eq!(frets[4].fret, 14); // 9
+
+        // aug triad
+        let frets = get_frets("aug");
+        assert_eq!(frets.len(), 3);
+        assert_eq!(frets[2].fret, 8); // ＃5
+
+        // sus2
+        let frets = get_frets("sus2");
+        assert_eq!(frets.len(), 3);
+        assert_eq!(frets[1].fret, 2); // 2
+
+        // m7b5 (half-diminished)
+        let frets = get_frets("m7b5");
+        assert_eq!(frets.len(), 4);
+        assert_eq!(frets[2].fret, 6); // ♭5
+        assert_eq!(frets[3].fret, 10); // ♭7
+    }
+
+    #[test]
+    fn test_parse_chord_type() {
+        assert_eq!(parse_chord_type("Cm7"), ("C".to_string(), "m7".to_string()));
+        assert_eq!(parse_chord_type("F＃dim7"), ("F＃".to_string(), "dim7".to_string()));
+        assert_eq!(parse_chord_type("B♭7sus4"), ("B♭".to_string(), "7sus4".to_string()));
+        assert_eq!(parse_chord_type("C"), ("C".to_string(), "".to_string()));
+        // 別表記の正規化
+        assert_eq!(parse_chord_type("CM7"), ("C".to_string(), "maj7".to_string()));
+        assert_eq!(parse_chord_type("C+"), ("C".to_string(), "aug".to_string()));
+        assert_eq!(parse_chord_type("Co7"), ("C".to_string(), "dim7".to_string()));
+        assert_eq!(parse_chord_type("Csus"), ("C".to_string(), "sus4".to_string()));
     }
 }

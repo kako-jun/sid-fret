@@ -1,19 +1,140 @@
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-/// スケールの構成音を取得（scaleUtil.ts の getScaleNoteNames() に相当）
+/// スケール種別の半音パターンを返す
+pub fn scale_intervals(scale_type: &str) -> Option<Vec<i32>> {
+    match scale_type {
+        "" | "ionian" => Some(vec![0, 2, 4, 5, 7, 9, 11]),
+        "m" | "aeolian" => Some(vec![0, 2, 3, 5, 7, 8, 10]),
+        "dorian" => Some(vec![0, 2, 3, 5, 7, 9, 10]),
+        "phrygian" => Some(vec![0, 1, 3, 5, 7, 8, 10]),
+        "lydian" => Some(vec![0, 2, 4, 6, 7, 9, 11]),
+        "mixolydian" => Some(vec![0, 2, 4, 5, 7, 9, 10]),
+        "locrian" => Some(vec![0, 1, 3, 5, 6, 8, 10]),
+        "penta" => Some(vec![0, 2, 4, 7, 9]),
+        "m_penta" => Some(vec![0, 3, 5, 7, 10]),
+        "blues" => Some(vec![0, 3, 5, 6, 7, 10]),
+        "harm_minor" => Some(vec![0, 2, 3, 5, 7, 8, 11]),
+        "melo_minor" => Some(vec![0, 2, 3, 5, 7, 9, 11]),
+        _ => None,
+    }
+}
+
+/// 全音階の音名（C基準、半音→音名）
+const NOTE_NAMES: [&str; 12] = [
+    "C", "C＃", "D", "D＃", "E", "F", "F＃", "G", "G＃", "A", "A＃", "B",
+];
+const NOTE_NAMES_FLAT: [&str; 12] = [
+    "C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B",
+];
+
+/// 音名から半音値を取得（C=0）
+fn note_to_semitone(note: &str) -> Option<i32> {
+    match note {
+        "C" | "B＃" => Some(0),
+        "C＃" | "D♭" => Some(1),
+        "D" => Some(2),
+        "D＃" | "E♭" => Some(3),
+        "E" | "F♭" => Some(4),
+        "F" | "E＃" => Some(5),
+        "F＃" | "G♭" => Some(6),
+        "G" => Some(7),
+        "G＃" | "A♭" => Some(8),
+        "A" => Some(9),
+        "A＃" | "B♭" => Some(10),
+        "B" | "C♭" => Some(11),
+        _ => None,
+    }
+}
+
+/// ルート音がフラット系かを判定
+/// C, G, D, A, E, B はシャープ系（ただしフラット付きは除く）
+/// F, B♭, E♭, A♭, D♭, G♭, C♭ はフラット系
+fn is_flat_key(root: &str) -> bool {
+    root.contains('♭') || matches!(root, "F")
+}
+
+/// ルート音 + 半音パターンからスケール構成音名を計算
+pub fn compute_scale_notes(root: &str, scale_type: &str) -> Vec<String> {
+    let intervals = match scale_intervals(scale_type) {
+        Some(i) => i,
+        None => return vec![],
+    };
+
+    let root_semitone = match note_to_semitone(root) {
+        Some(s) => s,
+        None => return vec![],
+    };
+
+    // フラット系を使うかの判定:
+    // - ルート音がフラット付きならフラット系
+    // - F はフラット系（B♭を含む）
+    // - マイナー系スケール（m, aeolian, dorian, phrygian, locrian, m_penta, blues, harm_minor, melo_minor）で
+    //   ルートがC, G, D等のシャープ系の場合でも、♭3等が出るためフラット系を使う
+    let minor_like = matches!(scale_type,
+        "m" | "aeolian" | "dorian" | "phrygian" | "locrian"
+        | "m_penta" | "blues" | "harm_minor" | "melo_minor"
+    );
+    let use_flat = is_flat_key(root) || minor_like;
+    let names = if use_flat { &NOTE_NAMES_FLAT } else { &NOTE_NAMES };
+
+    intervals
+        .iter()
+        .map(|&interval| {
+            let semitone = (root_semitone + interval) % 12;
+            names[semitone as usize].to_string()
+        })
+        .collect()
+}
+
+/// スケールキーをルート音とスケール種別に分割
+/// "C" -> ("C", ""), "C_dorian" -> ("C", "dorian"), "Cm" -> ("C", "m")
+pub fn parse_scale_key(scale: &str) -> (String, String) {
+    // "_" 区切りの場合
+    if let Some(pos) = scale.find('_') {
+        let root = &scale[..pos];
+        let scale_type = &scale[pos + 1..];
+        return (root.to_string(), scale_type.to_string());
+    }
+    // "m" suffix（ただし1文字の音名 + "m" の場合のみ）
+    if let Some(root_part) = scale.strip_suffix('m') {
+        // ルート音が有効な音名かチェック
+        if note_to_semitone(root_part).is_some() {
+            return (root_part.to_string(), "m".to_string());
+        }
+    }
+    // メジャー
+    (scale.to_string(), String::new())
+}
+
+/// スケールの構成音を取得
 #[wasm_bindgen]
 pub fn get_scale_note_names(scale: &str) -> Vec<JsValue> {
+    // まずハードコードマップを検索（エンハーモニックスペルの正確性のため）
     let scale_map = create_scale_note_map();
-    scale_map
-        .get(scale)
-        .unwrap_or(&vec![])
+    if let Some(notes) = scale_map.get(scale) {
+        return notes.iter().map(|s| JsValue::from_str(s)).collect();
+    }
+
+    // なければ計算で生成
+    let (root, scale_type) = parse_scale_key(scale);
+    compute_scale_notes(&root, &scale_type)
         .iter()
         .map(|s| JsValue::from_str(s))
         .collect()
 }
 
-/// スケールごとの構成音マップを作成
+/// 内部用: スケール構成音をStringのVecで返す
+pub fn get_scale_note_names_internal(scale: &str) -> Vec<String> {
+    let scale_map = create_scale_note_map();
+    if let Some(notes) = scale_map.get(scale) {
+        return notes.iter().map(|s| s.to_string()).collect();
+    }
+    let (root, scale_type) = parse_scale_key(scale);
+    compute_scale_notes(&root, &scale_type)
+}
+
+/// スケールごとの構成音マップを作成（メジャー/マイナー 48キー）
 pub fn create_scale_note_map() -> HashMap<&'static str, Vec<&'static str>> {
     let mut map = HashMap::new();
 
@@ -79,16 +200,70 @@ pub fn create_scale_note_map() -> HashMap<&'static str, Vec<&'static str>> {
 /// ダイアトニックコード（トライアド）を取得
 #[wasm_bindgen]
 pub fn get_scale_diatonic_chords(scale: &str) -> Vec<JsValue> {
+    let chords = get_scale_diatonic_chords_internal(scale);
+    chords.iter().map(|s| JsValue::from_str(s)).collect()
+}
+
+/// 内部用: ダイアトニックコードをStringのVecで返す
+pub fn get_scale_diatonic_chords_internal(scale: &str) -> Vec<String> {
+    // まずハードコードマップを検索
     let chord_map = create_diatonic_chord_map();
-    chord_map
-        .get(scale)
-        .unwrap_or(&vec![])
+    if let Some(chords) = chord_map.get(scale) {
+        return chords.iter().map(|s| s.to_string()).collect();
+    }
+
+    // なければ計算で生成
+    let (root, scale_type) = parse_scale_key(scale);
+    let notes = compute_scale_notes(&root, &scale_type);
+    if notes.is_empty() {
+        return vec![];
+    }
+
+    let qualities = diatonic_triad_qualities(&scale_type);
+    if qualities.is_empty() {
+        return vec![]; // ペンタトニック・ブルースにはダイアトニックコードなし
+    }
+
+    notes
         .iter()
-        .map(|s| JsValue::from_str(s))
+        .zip(qualities.iter())
+        .map(|(note, quality)| format!("{note}{quality}"))
         .collect()
 }
 
-/// ダイアトニックコードマップを作成
+/// スケール種別ごとのダイアトニックトライアド品質
+fn diatonic_triad_qualities(scale_type: &str) -> Vec<&'static str> {
+    match scale_type {
+        "" | "ionian" => vec!["", "m", "m", "", "", "m", "dim"],
+        "m" | "aeolian" => vec!["m", "dim", "", "m", "m", "", ""],
+        "dorian" => vec!["m", "m", "", "", "m", "dim", ""],
+        "phrygian" => vec!["m", "", "", "m", "dim", "", "m"],
+        "lydian" => vec!["", "", "m", "dim", "", "m", "m"],
+        "mixolydian" => vec!["", "m", "dim", "", "m", "m", ""],
+        "locrian" => vec!["dim", "", "m", "m", "", "", "m"],
+        "harm_minor" => vec!["m", "dim", "aug", "m", "", "", "dim"],
+        "melo_minor" => vec!["m", "m", "aug", "", "", "dim", "dim"],
+        _ => vec![], // ペンタトニック・ブルースはなし
+    }
+}
+
+/// スケール種別ごとのダイアトニック7thコード品質
+fn diatonic_7th_qualities(scale_type: &str) -> Vec<&'static str> {
+    match scale_type {
+        "" | "ionian" => vec!["maj7", "m7", "m7", "maj7", "7", "m7", "m7♭5"],
+        "m" | "aeolian" => vec!["m7", "m7♭5", "maj7", "m7", "m7", "maj7", "7"],
+        "dorian" => vec!["m7", "m7", "maj7", "7", "m7", "m7♭5", "maj7"],
+        "phrygian" => vec!["m7", "maj7", "7", "m7", "m7♭5", "maj7", "m7"],
+        "lydian" => vec!["maj7", "7", "m7", "m7♭5", "maj7", "m7", "m7"],
+        "mixolydian" => vec!["7", "m7", "m7♭5", "maj7", "m7", "m7", "maj7"],
+        "locrian" => vec!["m7♭5", "maj7", "m7", "m7", "maj7", "7", "m7"],
+        "harm_minor" => vec!["m(maj7)", "m7♭5", "aug(maj7)", "m7", "7", "maj7", "dim7"],
+        "melo_minor" => vec!["m(maj7)", "m7", "aug(maj7)", "7", "7", "m7♭5", "m7♭5"],
+        _ => vec![],
+    }
+}
+
+/// ダイアトニックコードマップを作成（メジャー/マイナー 48キー）
 pub fn create_diatonic_chord_map() -> HashMap<&'static str, Vec<&'static str>> {
     let mut map = HashMap::new();
 
@@ -154,16 +329,38 @@ pub fn create_diatonic_chord_map() -> HashMap<&'static str, Vec<&'static str>> {
 /// ダイアトニックコード（7th）を取得
 #[wasm_bindgen]
 pub fn get_scale_diatonic_chords_with_7th(scale: &str) -> Vec<JsValue> {
+    let chords = get_scale_diatonic_chords_7th_internal(scale);
+    chords.iter().map(|s| JsValue::from_str(s)).collect()
+}
+
+/// 内部用: ダイアトニック7thコードをStringのVecで返す
+pub fn get_scale_diatonic_chords_7th_internal(scale: &str) -> Vec<String> {
+    // まずハードコードマップを検索
     let chord_map = create_diatonic_chord_7th_map();
-    chord_map
-        .get(scale)
-        .unwrap_or(&vec![])
+    if let Some(chords) = chord_map.get(scale) {
+        return chords.iter().map(|s| s.to_string()).collect();
+    }
+
+    // なければ計算で生成
+    let (root, scale_type) = parse_scale_key(scale);
+    let notes = compute_scale_notes(&root, &scale_type);
+    if notes.is_empty() {
+        return vec![];
+    }
+
+    let qualities = diatonic_7th_qualities(&scale_type);
+    if qualities.is_empty() {
+        return vec![];
+    }
+
+    notes
         .iter()
-        .map(|s| JsValue::from_str(s))
+        .zip(qualities.iter())
+        .map(|(note, quality)| format!("{note}{quality}"))
         .collect()
 }
 
-/// ダイアトニックコード（7th）マップを作成
+/// ダイアトニックコード（7th）マップを作成（メジャー/マイナー 48キー）
 pub fn create_diatonic_chord_7th_map() -> HashMap<&'static str, Vec<&'static str>> {
     let mut map = HashMap::new();
 
@@ -229,6 +426,7 @@ pub fn create_diatonic_chord_7th_map() -> HashMap<&'static str, Vec<&'static str
 /// スケール名の英語表記を取得
 #[wasm_bindgen]
 pub fn scale_text(scale: &str) -> String {
+    // まず既存の固定マップを検索
     let scale_names: HashMap<&str, &str> = [
         ("C", "C Major"),
         ("Cm", "C Minor"),
@@ -277,10 +475,29 @@ pub fn scale_text(scale: &str) -> String {
     .cloned()
     .collect();
 
-    scale_names
-        .get(scale)
-        .map(|s| format!("{s} Scale"))
-        .unwrap_or_else(|| scale.to_string())
+    if let Some(name) = scale_names.get(scale) {
+        return format!("{name} Scale");
+    }
+
+    // 新スケールの動的生成
+    let (root, scale_type) = parse_scale_key(scale);
+    let type_name = match scale_type.as_str() {
+        "" | "ionian" => "Major",
+        "m" | "aeolian" => "Minor",
+        "dorian" => "Dorian",
+        "phrygian" => "Phrygian",
+        "lydian" => "Lydian",
+        "mixolydian" => "Mixolydian",
+        "locrian" => "Locrian",
+        "penta" => "Major Pentatonic",
+        "m_penta" => "Minor Pentatonic",
+        "blues" => "Blues",
+        "harm_minor" => "Harmonic Minor",
+        "melo_minor" => "Melodic Minor",
+        other => other,
+    };
+
+    format!("{root} {type_name} Scale")
 }
 
 #[cfg(test)]
@@ -309,5 +526,61 @@ mod tests {
     fn test_scale_text() {
         assert_eq!(scale_text("C"), "C Major Scale");
         assert_eq!(scale_text("Am"), "A Minor Scale");
+    }
+
+    #[test]
+    fn test_scale_intervals() {
+        assert_eq!(scale_intervals("dorian"), Some(vec![0, 2, 3, 5, 7, 9, 10]));
+        assert_eq!(scale_intervals("blues"), Some(vec![0, 3, 5, 6, 7, 10]));
+        assert_eq!(scale_intervals("unknown"), None);
+    }
+
+    #[test]
+    fn test_compute_scale_notes() {
+        let notes = compute_scale_notes("C", "dorian");
+        assert_eq!(notes, vec!["C", "D", "E♭", "F", "G", "A", "B♭"]);
+
+        let notes = compute_scale_notes("A", "m_penta");
+        assert_eq!(notes, vec!["A", "C", "D", "E", "G"]);
+
+        let notes = compute_scale_notes("G", "mixolydian");
+        assert_eq!(notes, vec!["G", "A", "B", "C", "D", "E", "F"]);
+    }
+
+    #[test]
+    fn test_parse_scale_key() {
+        assert_eq!(parse_scale_key("C"), ("C".to_string(), "".to_string()));
+        assert_eq!(parse_scale_key("Am"), ("A".to_string(), "m".to_string()));
+        assert_eq!(parse_scale_key("C_dorian"), ("C".to_string(), "dorian".to_string()));
+        assert_eq!(parse_scale_key("A_blues"), ("A".to_string(), "blues".to_string()));
+    }
+
+    #[test]
+    fn test_new_scale_diatonic_chords() {
+        let chords = get_scale_diatonic_chords_internal("C_dorian");
+        assert_eq!(chords.len(), 7);
+        assert_eq!(chords[0], "Cm");  // i
+        assert_eq!(chords[3], "F");   // IV
+    }
+
+    #[test]
+    fn test_new_scale_text() {
+        assert_eq!(scale_text("C_dorian"), "C Dorian Scale");
+        assert_eq!(scale_text("A_blues"), "A Blues Scale");
+        assert_eq!(scale_text("E_penta"), "E Major Pentatonic Scale");
+    }
+
+    #[test]
+    fn test_pentatonic_no_diatonic_chords() {
+        let chords = get_scale_diatonic_chords_internal("C_penta");
+        assert!(chords.is_empty());
+    }
+
+    #[test]
+    fn test_diatonic_7th_for_modes() {
+        let chords = get_scale_diatonic_chords_7th_internal("C_dorian");
+        assert_eq!(chords.len(), 7);
+        assert_eq!(chords[0], "Cm7");    // im7
+        assert_eq!(chords[3], "F7");     // IV7
     }
 }

@@ -55,23 +55,40 @@ fn get_chord_name_aliases_internal(chord: &str) -> Vec<String> {
 fn create_type_alias_map() -> HashMap<String, Vec<String>> {
     let mut map = HashMap::new();
 
+    // トライアド
     map.insert("".to_string(), vec!["".to_string(), "maj".to_string(), "△".to_string()]);
-    map.insert("maj7".to_string(), vec!["maj7".to_string(), "M7".to_string(), "△7".to_string()]);
-    map.insert("m7".to_string(), vec!["m7".to_string(), "-7".to_string()]);
-    map.insert("7".to_string(), vec!["7".to_string()]);
     map.insert("m".to_string(), vec!["m".to_string(), "-".to_string()]);
     map.insert("dim".to_string(), vec!["dim".to_string(), "o".to_string()]);
     map.insert("aug".to_string(), vec!["aug".to_string(), "+".to_string()]);
     map.insert("sus4".to_string(), vec!["sus4".to_string(), "sus".to_string()]);
-    map.insert("add9".to_string(), vec!["add9".to_string()]);
-    map.insert("6".to_string(), vec!["6".to_string()]);
-    map.insert("9".to_string(), vec!["9".to_string()]);
-    map.insert("m_maj7".to_string(), vec!["m(maj7)".to_string(), "mM7".to_string(), "-M7".to_string()]);
-    map.insert("m6".to_string(), vec!["m6".to_string(), "-6".to_string()]);
-    map.insert("m9".to_string(), vec!["m9".to_string(), "-9".to_string()]);
-    map.insert("M9".to_string(), vec!["M9".to_string(), "maj9".to_string(), "△9".to_string()]);
-    map.insert("m_maj9".to_string(), vec!["m(maj9)".to_string(), "mM9".to_string(), "-M9".to_string()]);
     map.insert("sus2".to_string(), vec!["sus2".to_string()]);
+
+    // 7th
+    map.insert("7".to_string(), vec!["7".to_string()]);
+    map.insert("maj7".to_string(), vec!["maj7".to_string(), "M7".to_string(), "△7".to_string()]);
+    map.insert("m7".to_string(), vec!["m7".to_string(), "-7".to_string()]);
+    map.insert("m_maj7".to_string(), vec!["m(maj7)".to_string(), "mM7".to_string(), "-M7".to_string()]);
+    map.insert("dim7".to_string(), vec!["dim7".to_string(), "o7".to_string(), "°7".to_string()]);
+    map.insert("m7b5".to_string(), vec!["m7♭5".to_string(), "m7b5".to_string(), "ø".to_string(), "ø7".to_string()]);
+    map.insert("aug7".to_string(), vec!["aug7".to_string(), "+7".to_string()]);
+    map.insert("7sus4".to_string(), vec!["7sus4".to_string(), "7sus".to_string()]);
+
+    // 6th
+    map.insert("6".to_string(), vec!["6".to_string()]);
+    map.insert("m6".to_string(), vec!["m6".to_string(), "-6".to_string()]);
+
+    // 9th
+    map.insert("9".to_string(), vec!["9".to_string()]);
+    map.insert("m9".to_string(), vec!["m9".to_string(), "-9".to_string()]);
+    map.insert("maj9".to_string(), vec!["M9".to_string(), "maj9".to_string(), "△9".to_string()]);
+    map.insert("m_maj9".to_string(), vec!["m(maj9)".to_string(), "mM9".to_string(), "-M9".to_string()]);
+    map.insert("add9".to_string(), vec!["add9".to_string()]);
+
+    // Altered
+    map.insert("7b9".to_string(), vec!["7♭9".to_string(), "7b9".to_string()]);
+    map.insert("7#9".to_string(), vec!["7＃9".to_string(), "7#9".to_string()]);
+
+    // Special
     map.insert("5".to_string(), vec!["5".to_string()]);
     map.insert("8".to_string(), vec!["8".to_string()]);
 
