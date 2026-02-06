@@ -153,5 +153,17 @@ src/
 
 ## 実装状況
 
+### Phase 1（構造リファクタリング）
 **全9ステップ完了** (2026-02-06)。13問題すべて解消済み。
-56テスト通過、clippy clean、release build OK。
+
+### Phase 2（コード品質改善）
+**全6項目完了** (2026-02-06)。
+
+1. 48キー×3ハードコードマップを計算化（ダイアトニックスペリングアルゴリズム実装）
+2. `pub fn` → `pub(crate) fn`（内部関数4箇所）
+3. `scale_text()` の HashMap毎回生成を削除
+4. `partial_cmp().unwrap()` を `unwrap_or(Ordering::Equal)` に修正
+5. `strip_octave()` ヘルパー追加（4箇所の重複パターン解消）
+6. `chromatic_chord_tones()` / `diatonic_chord_tones()` 関数化
+
+58テスト通過、clippy clean、release build OK。

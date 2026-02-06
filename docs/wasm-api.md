@@ -207,13 +207,13 @@ interface StringDef {
 
 ## 対応スケール
 
-### メジャー/マイナー（48キー、ハードコード）
+### メジャー/マイナー（48キー、計算生成）
 C, Cm, C＃, C＃m, C♭, C♭m, D, Dm, D＃, D＃m, D♭, D♭m,
 E, Em, E＃, E＃m, E♭, E♭m, F, Fm, F＃, F＃m, F♭, F♭m,
 G, Gm, G＃, G＃m, G♭, G♭m, A, Am, A＃, A＃m, A♭, A♭m,
 B, Bm, B＃, B＃m, B♭, B♭m
 
-### モード（計算生成）
+### モード
 `{Root}_dorian`, `{Root}_phrygian`, `{Root}_lydian`, `{Root}_mixolydian`, `{Root}_locrian`
 
 ### ペンタトニック・ブルース

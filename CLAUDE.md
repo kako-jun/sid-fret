@@ -17,7 +17,7 @@ src/
 │   ├── pitch.rs              # 音名・ピッチの統一基盤（12音配列、半音計算、異名同音比較）
 │   ├── interval.rs           # インターバル計算（半音距離、転回形判定）
 │   ├── chord_type.rs         # コード構成音定義（22コードタイプ、ChordTone構造体）
-│   └── scale_type.rs         # スケール定義（12スケール、48キーマップ）
+│   └── scale_type.rs         # スケール定義（12スケール、ダイアトニックスペリング計算）
 ├── harmony/                  # 和声理論（楽器非依存）
 │   ├── diatonic.rs           # ダイアトニックコード生成（triad + 7th）
 │   ├── functional.rs         # 機能和声分析（I-VII度数、進行分析）
@@ -117,7 +117,7 @@ struct Tuning { name: String, strings: Vec<StringDef>, max_fret: i32 }
 ```bash
 cargo build           # デバッグビルド
 cargo build --release # リリースビルド
-cargo test            # テスト実行（56件）
+cargo test            # テスト実行（58件）
 cargo clippy          # Lint
 cargo fmt             # フォーマット
 

@@ -43,24 +43,27 @@
 
 ## 実装方式
 
-既存の48キーHandHashMapハードコード方式ではなく、**半音パターンから構成音を計算する方式**に変更する。
+**ダイアトニックスペリングアルゴリズム**により全スケールを計算で生成する。
+ハードコードマップは廃止済み。
 
-### 新規関数
+### 関数
 
 ```rust
 /// スケール種別の半音パターンを返す
 pub fn scale_intervals(scale_type: &str) -> Option<Vec<i32>>
 
 /// ルート音 + スケール種別からスケール構成音名を計算
+/// 7音スケールはダイアトニックスペリング（各度に固有文字名）を使用
 /// 例: compute_scale_notes("C", "dorian") -> ["C", "D", "E♭", "F", "G", "A", "B♭"]
+/// 例: compute_scale_notes("F＃", "") -> ["F＃", "G＃", "A＃", "B", "C＃", "D＃", "E＃"]
 pub fn compute_scale_notes(root: &str, scale_type: &str) -> Vec<String>
 ```
 
-### 既存関数の変更
+### ダイアトニックスペリングの仕組み
 
-- `create_scale_note_map()` — 既存48キーエントリを維持 + 新スケールを計算で追加
-- `get_scale_note_names(scale)` — 変更なし（内部マップが拡大するだけ）
-- `scale_text(scale)` — 新スケールの表示名を追加
+1. ルート音の文字（C/D/E/F/G/A/B）から連続7文字を割り当て
+2. 各度の期待半音値と自然音の半音値の差分でシャープ/フラットを付与
+3. ダブルシャープ（＃＃）、ダブルフラット（♭♭）にも対応
 
 ### `scale_text` 追加分
 
@@ -111,9 +114,10 @@ pub fn compute_scale_notes(root: &str, scale_type: &str) -> Vec<String>
 | Harmonic Minor | m(maj7) | m7♭5 | aug(maj7) | m7 | 7 | maj7 | dim7 |
 | Melodic Minor | m(maj7) | m7 | aug(maj7) | 7 | 7 | m7♭5 | m7♭5 |
 
-## 変更方針
+## 実装方針
 
-- 既存ハードコードの48キーマップは `compute_scale_notes()` 計算方式に置き換え
+- 全スケール（メジャー/マイナー48キー含む）をダイアトニックスペリングアルゴリズムで計算
+- ハードコードマップ（`create_scale_note_map()`）は廃止済み
 - 既存キー名（"C", "Am" 等）は引き続き使用可能（同じ結果）
 - 新スケールは `"C_dorian"` 等の新キー名でアクセス
 
