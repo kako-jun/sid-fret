@@ -1,16 +1,14 @@
 use crate::instrument::fretboard::get_interval;
-use crate::harmony::diatonic::create_diatonic_chord_map;
+use crate::harmony::diatonic::get_scale_diatonic_chords_internal;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 /// 機能和声のディグリー番号を取得（harmonyUtil.ts の getFunctionalHarmony() に相当）
 #[wasm_bindgen]
 pub fn get_functional_harmony(scale: &str, chord: &str) -> i32 {
-    let chord_map = create_diatonic_chord_map();
-    let empty_vec = vec![];
-    let chords = chord_map.get(scale).unwrap_or(&empty_vec);
+    let chords = get_scale_diatonic_chords_internal(scale);
 
-    if let Some(index) = chords.iter().position(|c| c == &chord) {
+    if let Some(index) = chords.iter().position(|c| c == chord) {
         (index + 1) as i32
     } else {
         0
@@ -252,11 +250,10 @@ pub fn analyze_progression(scale: &str, chords: Vec<JsValue>) -> JsValue {
 }
 
 /// 内部用の進行分析
-pub fn analyze_progression_internal(scale: &str, chords: &[String]) -> Vec<ProgressionInfo> {
+pub(crate) fn analyze_progression_internal(scale: &str, chords: &[String]) -> Vec<ProgressionInfo> {
     use crate::harmony::cadence::{cadence_text, functional_area};
 
-    let diatonic_map = create_diatonic_chord_map();
-    let diatonic_chords = diatonic_map.get(scale).cloned().unwrap_or_default();
+    let diatonic_chords = get_scale_diatonic_chords_internal(scale);
 
     let mut results = Vec::new();
     let mut prev_degree = 0;
@@ -300,7 +297,7 @@ pub fn analyze_progression_internal(scale: &str, chords: &[String]) -> Vec<Progr
 
 /// セカンダリードミナント検出
 /// 非ダイアトニックのドミナント7thコードがダイアトニックコードのV7かを判定
-fn detect_secondary_dominant(chord: &str, diatonic_chords: &[&str]) -> (bool, String) {
+fn detect_secondary_dominant(chord: &str, diatonic_chords: &[String]) -> (bool, String) {
     use crate::core::chord_type::{get_root_note, parse_chord_type};
     use crate::core::pitch::fret_offset;
 
@@ -320,7 +317,7 @@ fn detect_secondary_dominant(chord: &str, diatonic_chords: &[&str]) -> (bool, St
 
     let degree_names = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
-    for (i, &diatonic) in diatonic_chords.iter().enumerate() {
+    for (i, diatonic) in diatonic_chords.iter().enumerate() {
         let diatonic_root = get_root_note(diatonic);
         let diatonic_offset = fret_offset(&diatonic_root);
         if diatonic_offset == target_offset && i < degree_names.len() {

@@ -120,35 +120,6 @@ pub fn value_text(value: &str) -> String {
 #[wasm_bindgen]
 pub fn scale_text(scale: &str) -> String {
     use crate::core::scale_type::parse_scale_key;
-    use std::collections::HashMap;
-
-    let scale_names: HashMap<&str, &str> = [
-        ("C", "C Major"), ("Cm", "C Minor"),
-        ("C＃", "C＃ Major"), ("C＃m", "C＃ Minor"),
-        ("C♭", "C♭ Major"), ("C♭m", "C♭ Minor"),
-        ("D", "D Major"), ("Dm", "D Minor"),
-        ("D＃", "D＃ Major"), ("D＃m", "D＃ Minor"),
-        ("D♭", "D♭ Major"), ("D♭m", "D♭ Minor"),
-        ("E", "E Major"), ("Em", "E Minor"),
-        ("E＃", "E＃ Major"), ("E＃m", "E＃ Minor"),
-        ("E♭", "E♭ Major"), ("E♭m", "E♭ Minor"),
-        ("F", "F Major"), ("Fm", "F Minor"),
-        ("F＃", "F＃ Major"), ("F＃m", "F＃ Minor"),
-        ("F♭", "F♭ Major"), ("F♭m", "F♭ Minor"),
-        ("G", "G Major"), ("Gm", "G Minor"),
-        ("G＃", "G＃ Major"), ("G＃m", "G＃ Minor"),
-        ("G♭", "G♭ Major"), ("G♭m", "G♭ Minor"),
-        ("A", "A Major"), ("Am", "A Minor"),
-        ("A＃", "A＃ Major"), ("A＃m", "A＃ Minor"),
-        ("A♭", "A♭ Major"), ("A♭m", "A♭ Minor"),
-        ("B", "B Major"), ("Bm", "B Minor"),
-        ("B＃", "B＃ Major"), ("B＃m", "B＃ Minor"),
-        ("B♭", "B♭ Major"), ("B♭m", "B♭ Minor"),
-    ].iter().cloned().collect();
-
-    if let Some(name) = scale_names.get(scale) {
-        return format!("{name} Scale");
-    }
 
     let (root, scale_type) = parse_scale_key(scale);
     let type_name = match scale_type.as_str() {

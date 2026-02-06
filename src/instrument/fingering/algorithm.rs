@@ -245,7 +245,7 @@ pub fn calculate_balanced(pitches: &[u8]) -> FingeringPattern {
             weights
                 .calculate_score(a)
                 .partial_cmp(&weights.calculate_score(b))
-                .unwrap()
+                .unwrap_or(std::cmp::Ordering::Equal)
         })
         .map(|mut p| {
             p.algorithm = "balanced".to_string();

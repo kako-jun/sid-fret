@@ -1,7 +1,7 @@
 //! フレットボード計算（楽器固有）
 
-use crate::core::chord_type::{get_chord_tones, get_root_note, parse_chord_type, ChordTone};
-use crate::core::pitch::{pitch_map_for_root, fret_offset};
+use crate::core::chord_type::{chromatic_chord_tones, diatonic_chord_tones, get_chord_tones, get_root_note, parse_chord_type, ChordTone};
+use crate::core::pitch::{pitch_map_for_root, fret_offset, strip_octave};
 use crate::instrument::tuning::Tuning;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -106,32 +106,9 @@ pub fn chord_positions(chord: &str, tuning: &Tuning) -> Vec<Position> {
             .is_some_and(|c| c.is_numeric());
 
     let (chord_tones, use_root) = if is_all_keys {
-        let tones = vec![
-            ChordTone { interval: "1".to_string(), semitones: 0 },
-            ChordTone { interval: "♭2".to_string(), semitones: 1 },
-            ChordTone { interval: "2".to_string(), semitones: 2 },
-            ChordTone { interval: "♭3".to_string(), semitones: 3 },
-            ChordTone { interval: "3".to_string(), semitones: 4 },
-            ChordTone { interval: "4".to_string(), semitones: 5 },
-            ChordTone { interval: "♭5".to_string(), semitones: 6 },
-            ChordTone { interval: "5".to_string(), semitones: 7 },
-            ChordTone { interval: "＃5".to_string(), semitones: 8 },
-            ChordTone { interval: "6".to_string(), semitones: 9 },
-            ChordTone { interval: "♭7".to_string(), semitones: 10 },
-            ChordTone { interval: "7".to_string(), semitones: 11 },
-        ];
-        (tones, "C".to_string())
+        (chromatic_chord_tones(), "C".to_string())
     } else if is_white_keys {
-        let tones = vec![
-            ChordTone { interval: "1".to_string(), semitones: 0 },
-            ChordTone { interval: "2".to_string(), semitones: 2 },
-            ChordTone { interval: "3".to_string(), semitones: 4 },
-            ChordTone { interval: "4".to_string(), semitones: 5 },
-            ChordTone { interval: "5".to_string(), semitones: 7 },
-            ChordTone { interval: "6".to_string(), semitones: 9 },
-            ChordTone { interval: "7".to_string(), semitones: 11 },
-        ];
-        (tones, "C".to_string())
+        (diatonic_chord_tones(), "C".to_string())
     } else if is_power_chord {
         let tones = vec![
             ChordTone { interval: "1".to_string(), semitones: 0 },
@@ -164,7 +141,7 @@ pub fn chord_positions(chord: &str, tuning: &Tuning) -> Vec<Position> {
     let octave_frets: Vec<FretWithPitch> = frets_with_pitch
         .iter()
         .flat_map(|fwp| {
-            let pitch_name = fwp.pitch.replace(char::is_numeric, "");
+            let pitch_name = strip_octave(&fwp.pitch);
 
             if pitch_name.starts_with('C') || pitch_name.starts_with('D') {
                 current_octave = 1;
@@ -189,7 +166,7 @@ pub fn chord_positions(chord: &str, tuning: &Tuning) -> Vec<Position> {
 
 /// インターバル記号を取得
 pub fn interval_for_pitch(chord: &str, target_pitch: &str) -> String {
-    let target_name = target_pitch.replace(char::is_numeric, "");
+    let target_name = strip_octave(target_pitch);
     let root = get_root_note(chord);
     let pitches = pitch_map_for_root(&root);
 
@@ -198,7 +175,7 @@ pub fn interval_for_pitch(chord: &str, target_pitch: &str) -> String {
         .position(|pitch| {
             pitch
                 .split('/')
-                .any(|p| p.replace(char::is_numeric, "") == target_name)
+                .any(|p| strip_octave(p) == target_name)
         })
         .unwrap_or(0);
 

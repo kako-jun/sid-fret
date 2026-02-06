@@ -66,11 +66,6 @@ pub fn absolute_semitone(pitch: &str) -> Option<i32> {
     Some(octave * 12 + semitone)
 }
 
-/// ルート音がフラット系かを判定
-pub fn is_flat_key(root: &str) -> bool {
-    root.contains('♭') || matches!(root, "F")
-}
-
 /// ルート音に基づくピッチマップを計算で生成
 /// CHROMATIC_BOTH をルートの位置でローテーション
 pub fn pitch_map_for_root(root: &str) -> Vec<String> {
@@ -86,6 +81,15 @@ pub fn fret_offset(root: &str) -> i32 {
     let root_semi = note_to_semitone(root).unwrap_or(0);
     let e_semi = 4; // E = 4
     (root_semi - e_semi + 12) % 12
+}
+
+/// ピッチ文字列からオクターブ数字を除去して音名のみ返す
+/// "C3" -> "C", "E♭1" -> "E♭", "G＃" -> "G＃"
+pub fn strip_octave(pitch: &str) -> String {
+    match parse_pitch(pitch) {
+        Some((name, _)) => name,
+        None => pitch.replace(char::is_numeric, ""),
+    }
 }
 
 /// ピッチの異名同音比較（例: C＃2 == D♭2）
@@ -142,6 +146,15 @@ mod tests {
         let map = pitch_map_for_root("E");
         assert_eq!(map[0], "E");
         assert_eq!(map[1], "F");
+    }
+
+    #[test]
+    fn test_strip_octave() {
+        assert_eq!(strip_octave("C3"), "C");
+        assert_eq!(strip_octave("E♭1"), "E♭");
+        assert_eq!(strip_octave("G＃2"), "G＃");
+        assert_eq!(strip_octave("C"), "C");
+        assert_eq!(strip_octave("F＃"), "F＃");
     }
 
     #[test]

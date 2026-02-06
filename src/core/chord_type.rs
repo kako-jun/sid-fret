@@ -110,6 +110,27 @@ pub fn get_chord_tones(chord_type: &str) -> Vec<ChordTone> {
         .collect()
 }
 
+/// 12音すべての ChordTone（ALL_KEYS用）
+pub fn chromatic_chord_tones() -> Vec<ChordTone> {
+    [
+        ("1", 0), ("♭2", 1), ("2", 2), ("♭3", 3), ("3", 4), ("4", 5),
+        ("♭5", 6), ("5", 7), ("＃5", 8), ("6", 9), ("♭7", 10), ("7", 11),
+    ]
+    .into_iter()
+    .map(|(interval, semitones)| ChordTone { interval: interval.to_string(), semitones })
+    .collect()
+}
+
+/// 白鍵7音の ChordTone（WHITE_KEYS用）
+pub fn diatonic_chord_tones() -> Vec<ChordTone> {
+    [
+        ("1", 0), ("2", 2), ("3", 4), ("4", 5), ("5", 7), ("6", 9), ("7", 11),
+    ]
+    .into_iter()
+    .map(|(interval, semitones)| ChordTone { interval: interval.to_string(), semitones })
+    .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

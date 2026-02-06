@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 use crate::core::chord_type::{get_chord_tones, parse_chord_type};
-use crate::core::pitch::{absolute_semitone, parse_pitch, pitch_map_for_root};
+use crate::core::pitch::{absolute_semitone, pitch_map_for_root, strip_octave};
 
 /// 2つのピッチ間の半音距離を計算
 #[wasm_bindgen]
@@ -56,10 +56,7 @@ pub fn detect_inversion(chord: &str, bass_pitch: &str) -> i32 {
     let frets = get_chord_tones(&chord_type);
     let pitch_map = pitch_map_for_root(&root);
 
-    let bass_name = match parse_pitch(bass_pitch) {
-        Some((name, _)) => name,
-        None => bass_pitch.replace(char::is_numeric, ""),
-    };
+    let bass_name = strip_octave(bass_pitch);
 
     for (i, tone) in frets.iter().enumerate() {
         let fret_semitone = tone.semitones as usize % 12;
