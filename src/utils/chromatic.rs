@@ -40,4 +40,18 @@ mod tests {
         assert!(!is_chromatic_note(None, Some("C2".to_string())));
         assert!(!is_chromatic_note(Some("C2".to_string()), None));
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// 半音関係の検出
+    #[test]
+    fn test_spec_chromatic_detection() {
+        // 半音関係
+        assert!(is_chromatic_note(Some("E1".to_string()), Some("F1".to_string())));
+        assert!(is_chromatic_note(Some("B1".to_string()), Some("C2".to_string())));
+        // 全音→false
+        assert!(!is_chromatic_note(Some("C2".to_string()), Some("D2".to_string())));
+        // None→false
+        assert!(!is_chromatic_note(None, Some("E1".to_string())));
+    }
 }

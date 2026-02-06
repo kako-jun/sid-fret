@@ -393,4 +393,92 @@ mod tests {
         assert!(results[0].is_secondary_dominant);
         assert_eq!(results[0].secondary_target, "V/ii");
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// Cメジャーの全ダイアトニックコード→度数
+    #[test]
+    fn test_spec_c_major_all_degrees() {
+        assert_eq!(get_functional_harmony("C", "C"), 1);
+        assert_eq!(get_functional_harmony("C", "Dm"), 2);
+        assert_eq!(get_functional_harmony("C", "Em"), 3);
+        assert_eq!(get_functional_harmony("C", "F"), 4);
+        assert_eq!(get_functional_harmony("C", "G"), 5);
+        assert_eq!(get_functional_harmony("C", "Am"), 6);
+        assert_eq!(get_functional_harmony("C", "Bdim"), 7);
+    }
+
+    /// 非ダイアトニック→0
+    #[test]
+    fn test_spec_non_diatonic_degree_zero() {
+        assert_eq!(get_functional_harmony("C", "D7"), 0);
+        assert_eq!(get_functional_harmony("C", "F＃"), 0);
+        assert_eq!(get_functional_harmony("C", "B♭"), 0);
+    }
+
+    /// よくある進行パターン
+    #[test]
+    fn test_spec_common_progressions() {
+        // キーC: I-V-vi-IV
+        let chords = vec!["C".to_string(), "G".to_string(), "Am".to_string(), "F".to_string()];
+        let results = analyze_progression_internal("C", &chords);
+        assert_eq!(results[0].degree, 1);
+        assert_eq!(results[1].degree, 5);
+        assert_eq!(results[2].degree, 6);
+        assert_eq!(results[3].degree, 4);
+        assert_eq!(results[0].function, "T");
+        assert_eq!(results[1].function, "D");
+        assert_eq!(results[2].function, "T");
+        assert_eq!(results[3].function, "S");
+
+        // キーG: I-vi-IV-V
+        let chords = vec!["G".to_string(), "Em".to_string(), "C".to_string(), "D".to_string()];
+        let results = analyze_progression_internal("G", &chords);
+        assert_eq!(results[0].degree, 1);
+        assert_eq!(results[1].degree, 6);
+        assert_eq!(results[2].degree, 4);
+        assert_eq!(results[3].degree, 5);
+    }
+
+    /// 各ダイアトニックへのセカンダリードミナント
+    #[test]
+    fn test_spec_secondary_dominants_all() {
+        fn sec_dom(chord: &str) -> (bool, String) {
+            let chords = vec![chord.to_string()];
+            let results = analyze_progression_internal("C", &chords);
+            (results[0].is_secondary_dominant, results[0].secondary_target.clone())
+        }
+        assert_eq!(sec_dom("A7"), (true, "V/ii".to_string()));
+        assert_eq!(sec_dom("B7"), (true, "V/iii".to_string()));
+        assert_eq!(sec_dom("C7"), (true, "V/iv".to_string()));
+        assert_eq!(sec_dom("D7"), (true, "V/v".to_string()));
+        assert_eq!(sec_dom("E7"), (true, "V/vi".to_string()));
+    }
+
+    /// dom7以外→非検出
+    #[test]
+    fn test_spec_secondary_dominant_non_dom7() {
+        let chords = vec!["A".to_string()];
+        let results = analyze_progression_internal("C", &chords);
+        assert!(!results[0].is_secondary_dominant);
+
+        let chords = vec!["Am7".to_string()];
+        let results = analyze_progression_internal("C", &chords);
+        assert!(!results[0].is_secondary_dominant);
+    }
+
+    /// 進行中のカデンツ検出
+    #[test]
+    fn test_spec_progression_cadence_detection() {
+        let chords = vec!["F".to_string(), "G".to_string(), "C".to_string()];
+        let results = analyze_progression_internal("C", &chords);
+        assert_eq!(results[0].cadence, "");
+        assert_eq!(results[1].cadence, "Half Cadence");
+        assert_eq!(results[2].cadence, "Perfect Cadence");
+
+        let chords = vec!["Dm".to_string(), "G".to_string(), "C".to_string()];
+        let results = analyze_progression_internal("C", &chords);
+        assert_eq!(results[1].cadence, "Half Cadence");
+        assert_eq!(results[2].cadence, "Perfect Cadence");
+    }
 }

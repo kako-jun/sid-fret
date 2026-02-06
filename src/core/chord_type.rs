@@ -171,4 +171,130 @@ mod tests {
         assert_eq!(tones.len(), 4);
         assert_eq!(tones[3].semitones, 9); // ♭♭7
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// 22コードタイプ全ての半音値を検証
+    #[test]
+    fn test_spec_all_22_chord_tones() {
+        fn semitones(ct: &str) -> Vec<i32> {
+            get_chord_tones(ct).iter().map(|t| t.semitones).collect()
+        }
+        // トライアド
+        assert_eq!(semitones(""), vec![0, 4, 7]);
+        assert_eq!(semitones("m"), vec![0, 3, 7]);
+        assert_eq!(semitones("dim"), vec![0, 3, 6]);
+        assert_eq!(semitones("aug"), vec![0, 4, 8]);
+        assert_eq!(semitones("sus4"), vec![0, 5, 7]);
+        assert_eq!(semitones("sus2"), vec![0, 2, 7]);
+        // 7th
+        assert_eq!(semitones("7"), vec![0, 4, 7, 10]);
+        assert_eq!(semitones("m7"), vec![0, 3, 7, 10]);
+        assert_eq!(semitones("maj7"), vec![0, 4, 7, 11]);
+        assert_eq!(semitones("m_maj7"), vec![0, 3, 7, 11]);
+        assert_eq!(semitones("dim7"), vec![0, 3, 6, 9]);
+        assert_eq!(semitones("m7b5"), vec![0, 3, 6, 10]);
+        assert_eq!(semitones("aug7"), vec![0, 4, 8, 10]);
+        assert_eq!(semitones("7sus4"), vec![0, 5, 7, 10]);
+        // 6th
+        assert_eq!(semitones("6"), vec![0, 4, 7, 9]);
+        assert_eq!(semitones("m6"), vec![0, 3, 7, 9]);
+        // 9th
+        assert_eq!(semitones("9"), vec![0, 4, 7, 10, 14]);
+        assert_eq!(semitones("m9"), vec![0, 3, 7, 10, 14]);
+        assert_eq!(semitones("maj9"), vec![0, 4, 7, 11, 14]);
+        assert_eq!(semitones("add9"), vec![0, 4, 7, 14]);
+        // Altered
+        assert_eq!(semitones("7b9"), vec![0, 4, 7, 10, 13]);
+        assert_eq!(semitones("7#9"), vec![0, 4, 7, 10, 15]);
+    }
+
+    /// インターバル文字列の検証
+    #[test]
+    fn test_spec_chord_tone_intervals() {
+        fn intervals(ct: &str) -> Vec<String> {
+            get_chord_tones(ct).iter().map(|t| t.interval.clone()).collect()
+        }
+        assert_eq!(intervals("m7"), vec!["1", "♭3", "5", "♭7"]);
+        assert_eq!(intervals("dim7"), vec!["1", "♭3", "♭5", "♭♭7"]);
+        assert_eq!(intervals("aug"), vec!["1", "3", "＃5"]);
+        assert_eq!(intervals("7#9"), vec!["1", "3", "5", "♭7", "＃9"]);
+        assert_eq!(intervals("m_maj7"), vec!["1", "♭3", "5", "7"]);
+        assert_eq!(intervals("sus4"), vec!["1", "4", "5"]);
+        assert_eq!(intervals("m7b5"), vec!["1", "♭3", "♭5", "♭7"]);
+        assert_eq!(intervals("7b9"), vec!["1", "3", "5", "♭7", "♭9"]);
+    }
+
+    /// エイリアス正規化（sid-noteで使う全表記）
+    #[test]
+    fn test_spec_parse_chord_aliases() {
+        fn ct(chord: &str) -> String {
+            parse_chord_type(chord).1
+        }
+        // maj7系
+        assert_eq!(ct("CM7"), "maj7");
+        assert_eq!(ct("C△7"), "maj7");
+        // minor系
+        assert_eq!(ct("C-"), "m");
+        assert_eq!(ct("C-7"), "m7");
+        // aug系
+        assert_eq!(ct("C+"), "aug");
+        assert_eq!(ct("C+7"), "aug7");
+        // dim系
+        assert_eq!(ct("Co"), "dim");
+        assert_eq!(ct("Co7"), "dim7");
+        assert_eq!(ct("C°7"), "dim7");
+        // half-dim
+        assert_eq!(ct("Cø"), "m7b5");
+        assert_eq!(ct("Cø7"), "m7b5");
+        assert_eq!(ct("Cm7♭5"), "m7b5");
+        // sus
+        assert_eq!(ct("Csus"), "sus4");
+        assert_eq!(ct("C7sus"), "7sus4");
+        // m6
+        assert_eq!(ct("C-6"), "m6");
+        // m_maj7
+        assert_eq!(ct("CmM7"), "m_maj7");
+        assert_eq!(ct("Cm(maj7)"), "m_maj7");
+        assert_eq!(ct("C-M7"), "m_maj7");
+        // 9th
+        assert_eq!(ct("CM9"), "maj9");
+        assert_eq!(ct("C△9"), "maj9");
+        assert_eq!(ct("C-9"), "m9");
+        // altered
+        assert_eq!(ct("C7♭9"), "7b9");
+        assert_eq!(ct("C7＃9"), "7#9");
+    }
+
+    /// ＃/♭ルート音のパース
+    #[test]
+    fn test_spec_parse_sharp_flat_roots() {
+        assert_eq!(parse_chord_type("F＃m7"), ("F＃".to_string(), "m7".to_string()));
+        assert_eq!(parse_chord_type("B♭7"), ("B♭".to_string(), "7".to_string()));
+        assert_eq!(parse_chord_type("A♭maj7"), ("A♭".to_string(), "maj7".to_string()));
+        assert_eq!(parse_chord_type("D♭m"), ("D♭".to_string(), "m".to_string()));
+        assert_eq!(parse_chord_type("G＃dim"), ("G＃".to_string(), "dim".to_string()));
+        assert_eq!(parse_chord_type("E♭aug"), ("E♭".to_string(), "aug".to_string()));
+        assert_eq!(parse_chord_type("C＃m7b5"), ("C＃".to_string(), "m7b5".to_string()));
+    }
+
+    /// ルート抽出の境界
+    #[test]
+    fn test_spec_get_root_note_edge_cases() {
+        assert_eq!(get_root_note(""), "");
+        assert_eq!(get_root_note("m7"), "");     // ルートなし
+        assert_eq!(get_root_note("7"), "");       // 数字始まり
+        assert_eq!(get_root_note("C"), "C");
+        assert_eq!(get_root_note("C＃"), "C＃");
+        assert_eq!(get_root_note("D♭"), "D♭");
+    }
+
+    /// 未知タイプ→メジャートライアドにフォールバック
+    #[test]
+    fn test_spec_unknown_chord_type_fallback() {
+        let tones = get_chord_tones("xyz");
+        assert_eq!(tones.len(), 3);
+        let semis: Vec<i32> = tones.iter().map(|t| t.semitones).collect();
+        assert_eq!(semis, vec![0, 4, 7]);
+    }
 }

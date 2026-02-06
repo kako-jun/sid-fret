@@ -182,4 +182,46 @@ mod tests {
         assert_eq!(scale_text("C_dorian"), "C Dorian Scale");
         assert_eq!(scale_text("A_blues"), "A Blues Scale");
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// 全12スケールタイプのテキスト
+    #[test]
+    fn test_spec_scale_text_all_types() {
+        assert_eq!(scale_text("C"), "C Major Scale");
+        assert_eq!(scale_text("Cm"), "C Minor Scale");
+        assert_eq!(scale_text("C_dorian"), "C Dorian Scale");
+        assert_eq!(scale_text("C_phrygian"), "C Phrygian Scale");
+        assert_eq!(scale_text("C_lydian"), "C Lydian Scale");
+        assert_eq!(scale_text("C_mixolydian"), "C Mixolydian Scale");
+        assert_eq!(scale_text("C_locrian"), "C Locrian Scale");
+        assert_eq!(scale_text("C_penta"), "C Major Pentatonic Scale");
+        assert_eq!(scale_text("C_m_penta"), "C Minor Pentatonic Scale");
+        assert_eq!(scale_text("C_blues"), "C Blues Scale");
+        assert_eq!(scale_text("C_harm_minor"), "C Harmonic Minor Scale");
+        assert_eq!(scale_text("C_melo_minor"), "C Melodic Minor Scale");
+    }
+
+    /// ＃/♭ルートのテキスト
+    #[test]
+    fn test_spec_scale_text_sharp_flat_roots() {
+        assert_eq!(scale_text("F＃"), "F＃ Major Scale");
+        assert_eq!(scale_text("B♭m"), "B♭ Minor Scale");
+        assert_eq!(scale_text("E♭_dorian"), "E♭ Dorian Scale");
+    }
+
+    /// ベースの実用範囲のget_line
+    #[test]
+    fn test_spec_get_line_bass_range() {
+        assert_eq!(get_line("E1"), Some(0.0));
+        assert_eq!(get_line("F1"), Some(1.0));
+        assert_eq!(get_line("G1"), Some(2.0));
+        assert_eq!(get_line("A1"), Some(3.0));
+        assert_eq!(get_line("B1"), Some(4.0));
+        assert_eq!(get_line("C2"), Some(5.0));
+        assert_eq!(get_line("G4"), Some(23.0));
+        // 範囲外
+        assert_eq!(get_line("D1"), None);
+        assert_eq!(get_line("A4"), None);
+    }
 }

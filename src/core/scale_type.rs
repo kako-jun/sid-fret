@@ -192,4 +192,106 @@ mod tests {
             ("A".to_string(), "blues".to_string())
         );
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// ナチュラルキーのメジャースケール
+    #[test]
+    fn test_spec_major_scale_all_natural_keys() {
+        assert_eq!(compute_scale_notes("C", ""), vec!["C", "D", "E", "F", "G", "A", "B"]);
+        assert_eq!(compute_scale_notes("G", ""), vec!["G", "A", "B", "C", "D", "E", "F＃"]);
+        assert_eq!(compute_scale_notes("D", ""), vec!["D", "E", "F＃", "G", "A", "B", "C＃"]);
+        assert_eq!(compute_scale_notes("F", ""), vec!["F", "G", "A", "B♭", "C", "D", "E"]);
+        assert_eq!(compute_scale_notes("B♭", ""), vec!["B♭", "C", "D", "E♭", "F", "G", "A"]);
+        assert_eq!(compute_scale_notes("E♭", ""), vec!["E♭", "F", "G", "A♭", "B♭", "C", "D"]);
+        assert_eq!(compute_scale_notes("A♭", ""), vec!["A♭", "B♭", "C", "D♭", "E♭", "F", "G"]);
+    }
+
+    /// マイナースケール
+    #[test]
+    fn test_spec_minor_scale_keys() {
+        assert_eq!(compute_scale_notes("A", "m"), vec!["A", "B", "C", "D", "E", "F", "G"]);
+        assert_eq!(compute_scale_notes("E", "m"), vec!["E", "F＃", "G", "A", "B", "C", "D"]);
+        assert_eq!(compute_scale_notes("D", "m"), vec!["D", "E", "F", "G", "A", "B♭", "C"]);
+        assert_eq!(compute_scale_notes("C", "m"), vec!["C", "D", "E♭", "F", "G", "A♭", "B♭"]);
+        assert_eq!(compute_scale_notes("F＃", "m"), vec!["F＃", "G＃", "A", "B", "C＃", "D", "E"]);
+    }
+
+    /// Cルートで全モード検証
+    #[test]
+    fn test_spec_modes_c_root() {
+        assert_eq!(compute_scale_notes("C", "dorian"), vec!["C", "D", "E♭", "F", "G", "A", "B♭"]);
+        assert_eq!(compute_scale_notes("C", "phrygian"), vec!["C", "D♭", "E♭", "F", "G", "A♭", "B♭"]);
+        assert_eq!(compute_scale_notes("C", "lydian"), vec!["C", "D", "E", "F＃", "G", "A", "B"]);
+        assert_eq!(compute_scale_notes("C", "mixolydian"), vec!["C", "D", "E", "F", "G", "A", "B♭"]);
+        assert_eq!(compute_scale_notes("C", "locrian"), vec!["C", "D♭", "E♭", "F", "G♭", "A♭", "B♭"]);
+    }
+
+    /// ＃/♭ルートのモード
+    #[test]
+    fn test_spec_modes_sharp_flat_roots() {
+        assert_eq!(compute_scale_notes("F＃", "dorian"), vec!["F＃", "G＃", "A", "B", "C＃", "D＃", "E"]);
+        assert_eq!(compute_scale_notes("B♭", "mixolydian"), vec!["B♭", "C", "D", "E♭", "F", "G", "A♭"]);
+        assert_eq!(compute_scale_notes("E♭", "lydian"), vec!["E♭", "F", "G", "A", "B♭", "C", "D"]);
+    }
+
+    /// ペンタトニック
+    #[test]
+    fn test_spec_pentatonic_scales() {
+        assert_eq!(compute_scale_notes("C", "penta"), vec!["C", "D", "E", "G", "A"]);
+        assert_eq!(compute_scale_notes("A", "m_penta"), vec!["A", "C", "D", "E", "G"]);
+        assert_eq!(compute_scale_notes("G", "penta"), vec!["G", "A", "B", "D", "E"]);
+        assert_eq!(compute_scale_notes("E", "m_penta"), vec!["E", "G", "A", "B", "D"]);
+        assert_eq!(compute_scale_notes("B♭", "penta"), vec!["B♭", "C", "D", "F", "G"]);
+    }
+
+    /// ブルーススケール
+    #[test]
+    fn test_spec_blues_scale() {
+        assert_eq!(compute_scale_notes("A", "blues"), vec!["A", "C", "D", "D＃", "E", "G"]);
+        assert_eq!(compute_scale_notes("C", "blues"), vec!["C", "E♭", "F", "F＃", "G", "B♭"]);
+        assert_eq!(compute_scale_notes("E", "blues"), vec!["E", "G", "A", "A＃", "B", "D"]);
+    }
+
+    /// ハーモニック/メロディックマイナー
+    #[test]
+    fn test_spec_harmonic_melodic_minor() {
+        assert_eq!(compute_scale_notes("A", "harm_minor"), vec!["A", "B", "C", "D", "E", "F", "G＃"]);
+        assert_eq!(compute_scale_notes("C", "melo_minor"), vec!["C", "D", "E♭", "F", "G", "A", "B"]);
+        assert_eq!(compute_scale_notes("D", "harm_minor"), vec!["D", "E", "F", "G", "A", "B♭", "C＃"]);
+    }
+
+    /// 異名同音ルート（ダブルシャープ/ダブルフラット）
+    #[test]
+    fn test_spec_enharmonic_root_scales() {
+        assert_eq!(compute_scale_notes("B＃", ""), vec!["B＃", "C＃＃", "D＃＃", "E＃", "F＃＃", "G＃＃", "A＃＃"]);
+        // C♭ major = enharmonic B major → single flats (diff wraps to -1 for most degrees)
+        assert_eq!(compute_scale_notes("C♭", ""), vec!["C♭", "D♭", "E♭", "F♭", "G♭", "A♭", "B♭"]);
+        // F♭ major: 4th degree B♭♭ has diff=-2
+        assert_eq!(compute_scale_notes("F♭", ""), vec!["F♭", "G♭", "A♭", "B♭♭", "C♭", "D♭", "E♭"]);
+    }
+
+    /// スケールキーパース境界
+    #[test]
+    fn test_spec_parse_scale_key_edge_cases() {
+        assert_eq!(parse_scale_key("C＃m"), ("C＃".to_string(), "m".to_string()));
+        assert_eq!(parse_scale_key("B♭_dorian"), ("B♭".to_string(), "dorian".to_string()));
+        assert_eq!(parse_scale_key("F＃_harm_minor"), ("F＃".to_string(), "harm_minor".to_string()));
+        assert_eq!(parse_scale_key("A_m_penta"), ("A".to_string(), "m_penta".to_string()));
+        assert_eq!(parse_scale_key("Gm"), ("G".to_string(), "m".to_string()));
+    }
+
+    /// 各スケールタイプの音数
+    #[test]
+    fn test_spec_scale_note_count() {
+        // 7音スケール
+        for st in &["", "m", "dorian", "phrygian", "lydian", "mixolydian", "locrian", "harm_minor", "melo_minor"] {
+            assert_eq!(compute_scale_notes("C", st).len(), 7, "scale_type={st}");
+        }
+        // 5音スケール
+        assert_eq!(compute_scale_notes("C", "penta").len(), 5);
+        assert_eq!(compute_scale_notes("C", "m_penta").len(), 5);
+        // 6音スケール
+        assert_eq!(compute_scale_notes("C", "blues").len(), 6);
+    }
 }

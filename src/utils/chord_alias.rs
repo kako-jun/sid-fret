@@ -102,4 +102,49 @@ mod tests {
         assert_eq!(aliases.len(), 1);
         assert_eq!(aliases[0], "Cxyz");
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// 全エイリアスタイプの別表記確認
+    #[test]
+    fn test_spec_all_alias_types() {
+        let a = get_chord_name_aliases_internal("C");
+        assert!(a.contains(&"C".to_string()));
+        assert!(a.contains(&"Cmaj".to_string()));
+        assert!(a.contains(&"C△".to_string()));
+
+        let a = get_chord_name_aliases_internal("Cm7b5");
+        assert!(a.contains(&"Cm7♭5".to_string()));
+        assert!(a.contains(&"Cm7b5".to_string()));
+        assert!(a.contains(&"Cø".to_string()));
+        assert!(a.contains(&"Cø7".to_string()));
+
+        let a = get_chord_name_aliases_internal("Cdim7");
+        assert!(a.contains(&"Cdim7".to_string()));
+        assert!(a.contains(&"Co7".to_string()));
+        assert!(a.contains(&"C°7".to_string()));
+
+        let a = get_chord_name_aliases_internal("Cmaj9");
+        assert!(a.contains(&"CM9".to_string()));
+        assert!(a.contains(&"Cmaj9".to_string()));
+        assert!(a.contains(&"C△9".to_string()));
+
+        let a = get_chord_name_aliases_internal("Cm_maj7");
+        assert!(a.contains(&"Cm(maj7)".to_string()));
+        assert!(a.contains(&"CmM7".to_string()));
+        assert!(a.contains(&"C-M7".to_string()));
+    }
+
+    /// ＃/♭ルートのエイリアス
+    #[test]
+    fn test_spec_aliases_sharp_flat_roots() {
+        let a = get_chord_name_aliases_internal("F＃maj7");
+        assert!(a.contains(&"F＃maj7".to_string()));
+        assert!(a.contains(&"F＃M7".to_string()));
+        assert!(a.contains(&"F＃△7".to_string()));
+
+        let a = get_chord_name_aliases_internal("B♭m");
+        assert!(a.contains(&"B♭m".to_string()));
+        assert!(a.contains(&"B♭-".to_string()));
+    }
 }

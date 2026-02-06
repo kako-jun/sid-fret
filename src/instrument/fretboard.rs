@@ -244,4 +244,111 @@ mod tests {
         let pos_5 = chord_positions("C", &Tuning::bass_5());
         assert!(pos_5.len() >= pos_4.len());
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// ALL_KEYSで12音すべてのポジション
+    #[test]
+    fn test_spec_all_keys_positions() {
+        let positions = chord_positions("ALL_KEYS", &Tuning::bass_4());
+        assert!(!positions.is_empty());
+        let intervals: std::collections::HashSet<&str> = positions.iter().map(|p| p.interval.as_str()).collect();
+        // 12種のインターバルが含まれる
+        for iv in &["1", "♭2", "2", "♭3", "3", "4", "♭5", "5", "＃5", "6", "♭7", "7"] {
+            assert!(intervals.contains(iv), "missing interval: {iv}");
+        }
+    }
+
+    /// WHITE_KEYSで白鍵7音
+    #[test]
+    fn test_spec_white_keys_positions() {
+        let positions = chord_positions("WHITE_KEYS", &Tuning::bass_4());
+        assert!(!positions.is_empty());
+        let intervals: std::collections::HashSet<&str> = positions.iter().map(|p| p.interval.as_str()).collect();
+        for iv in &["1", "2", "3", "4", "5", "6", "7"] {
+            assert!(intervals.contains(iv), "missing interval: {iv}");
+        }
+        assert_eq!(intervals.len(), 7);
+    }
+
+    /// パワーコード
+    #[test]
+    fn test_spec_power_chord() {
+        for chord in &["C5", "E5", "F＃5"] {
+            let positions = chord_positions(chord, &Tuning::bass_4());
+            assert!(!positions.is_empty(), "empty positions for {chord}");
+            let intervals: std::collections::HashSet<&str> = positions.iter().map(|p| p.interval.as_str()).collect();
+            assert!(intervals.contains("1"), "{chord} missing 1");
+            assert!(intervals.contains("5"), "{chord} missing 5");
+            assert_eq!(intervals.len(), 2, "{chord} has extra intervals: {intervals:?}");
+        }
+    }
+
+    /// オクターブユニゾン
+    #[test]
+    fn test_spec_octave_unison() {
+        let positions = chord_positions("C8", &Tuning::bass_4());
+        assert!(!positions.is_empty());
+        let intervals: std::collections::HashSet<&str> = positions.iter().map(|p| p.interval.as_str()).collect();
+        assert!(intervals.contains("1"));
+        assert!(intervals.contains("8"));
+        assert_eq!(intervals.len(), 2);
+    }
+
+    /// 全12音のインターバル
+    #[test]
+    fn test_spec_interval_for_pitch_all_12() {
+        assert_eq!(interval_for_pitch("C", "C2"), "1");
+        assert_eq!(interval_for_pitch("C", "D♭2"), "♭2");
+        assert_eq!(interval_for_pitch("C", "D2"), "2");
+        assert_eq!(interval_for_pitch("C", "E♭2"), "♭3");
+        assert_eq!(interval_for_pitch("C", "E2"), "3");
+        assert_eq!(interval_for_pitch("C", "F2"), "4");
+        assert_eq!(interval_for_pitch("C", "F＃2"), "＃4/♭5");
+        assert_eq!(interval_for_pitch("C", "G2"), "5");
+        assert_eq!(interval_for_pitch("C", "A♭2"), "＃5");
+        assert_eq!(interval_for_pitch("C", "A2"), "6");
+        assert_eq!(interval_for_pitch("C", "B♭2"), "♭7");
+        assert_eq!(interval_for_pitch("C", "B2"), "7");
+    }
+
+    /// ＃/♭ルートのポジション
+    #[test]
+    fn test_spec_chord_positions_sharp_flat_roots() {
+        let pos = chord_positions("F＃m", &Tuning::bass_4());
+        assert!(!pos.is_empty());
+        let intervals: std::collections::HashSet<&str> = pos.iter().map(|p| p.interval.as_str()).collect();
+        assert!(intervals.contains("1"));
+        assert!(intervals.contains("♭3"));
+        assert!(intervals.contains("5"));
+
+        let pos = chord_positions("B♭7", &Tuning::bass_4());
+        assert!(!pos.is_empty());
+        let intervals: std::collections::HashSet<&str> = pos.iter().map(|p| p.interval.as_str()).collect();
+        assert!(intervals.contains("♭7"));
+
+        let pos = chord_positions("E♭maj7", &Tuning::bass_4());
+        assert!(!pos.is_empty());
+        let intervals: std::collections::HashSet<&str> = pos.iter().map(|p| p.interval.as_str()).collect();
+        assert!(intervals.contains("7"));
+    }
+
+    /// 5弦は4弦より多い（または同数）ポジション
+    #[test]
+    fn test_spec_5string_more_positions() {
+        for chord in &["C", "Am", "G7", "Dm", "E♭maj7", "F＃m"] {
+            let pos_4 = chord_positions(chord, &Tuning::bass_4());
+            let pos_5 = chord_positions(chord, &Tuning::bass_5());
+            assert!(pos_5.len() >= pos_4.len(), "5-string should have >= positions for {chord}");
+        }
+    }
+
+    /// DropDの最低音チェック
+    #[test]
+    fn test_spec_drop_d_tuning() {
+        let positions = chord_positions("D", &Tuning::bass_drop_d());
+        // fret=0のルート（"1"）ポジションが存在（開放弦D=ルート）
+        let has_open_root = positions.iter().any(|p| p.fret == 0 && p.interval == "1");
+        assert!(has_open_root, "Drop D should have open string D as root");
+    }
 }

@@ -124,4 +124,100 @@ mod tests {
         assert_eq!(chords[0], "Cm7");
         assert_eq!(chords[3], "F7");
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// Cメジャーのトライアド
+    #[test]
+    fn test_spec_c_major_diatonic_triads() {
+        let chords = get_scale_diatonic_chords_internal("C");
+        assert_eq!(chords, vec!["C", "Dm", "Em", "F", "G", "Am", "Bdim"]);
+    }
+
+    /// Aマイナーのトライアド
+    #[test]
+    fn test_spec_a_minor_diatonic_triads() {
+        let chords = get_scale_diatonic_chords_internal("Am");
+        assert_eq!(chords, vec!["Am", "Bdim", "C", "Dm", "Em", "F", "G"]);
+    }
+
+    /// 各モードの品質パターン検証
+    #[test]
+    fn test_spec_all_mode_diatonic_triads() {
+        assert_eq!(
+            get_scale_diatonic_chords_internal("C_dorian"),
+            vec!["Cm", "Dm", "E♭", "F", "Gm", "Adim", "B♭"]
+        );
+        assert_eq!(
+            get_scale_diatonic_chords_internal("C_phrygian"),
+            vec!["Cm", "D♭", "E♭", "Fm", "Gdim", "A♭", "B♭m"]
+        );
+        assert_eq!(
+            get_scale_diatonic_chords_internal("C_lydian"),
+            vec!["C", "D", "Em", "F＃dim", "G", "Am", "Bm"]
+        );
+        assert_eq!(
+            get_scale_diatonic_chords_internal("C_mixolydian"),
+            vec!["C", "Dm", "Edim", "F", "Gm", "Am", "B♭"]
+        );
+        assert_eq!(
+            get_scale_diatonic_chords_internal("C_locrian"),
+            vec!["Cdim", "D♭", "E♭m", "Fm", "G♭", "A♭", "B♭m"]
+        );
+    }
+
+    /// Cメジャーの7thコード
+    #[test]
+    fn test_spec_c_major_diatonic_7ths() {
+        let chords = get_scale_diatonic_chords_7th_internal("C");
+        assert_eq!(chords, vec!["Cmaj7", "Dm7", "Em7", "Fmaj7", "G7", "Am7", "Bm7♭5"]);
+    }
+
+    /// ハーモニックマイナーのダイアトニック
+    #[test]
+    fn test_spec_harm_minor_diatonic() {
+        let triads = get_scale_diatonic_chords_internal("C_harm_minor");
+        assert_eq!(triads, vec!["Cm", "Ddim", "E♭aug", "Fm", "G", "A♭", "Bdim"]);
+
+        let sevenths = get_scale_diatonic_chords_7th_internal("C_harm_minor");
+        assert_eq!(sevenths, vec!["Cm(maj7)", "Dm7♭5", "E♭aug(maj7)", "Fm7", "G7", "A♭maj7", "Bdim7"]);
+    }
+
+    /// メロディックマイナーのダイアトニック
+    #[test]
+    fn test_spec_melo_minor_diatonic() {
+        let triads = get_scale_diatonic_chords_internal("C_melo_minor");
+        assert_eq!(triads, vec!["Cm", "Dm", "E♭aug", "F", "G", "Adim", "Bdim"]);
+
+        let sevenths = get_scale_diatonic_chords_7th_internal("C_melo_minor");
+        assert_eq!(sevenths, vec!["Cm(maj7)", "Dm7", "E♭aug(maj7)", "F7", "G7", "Am7♭5", "Bm7♭5"]);
+    }
+
+    /// ＃キーのダイアトニック
+    #[test]
+    fn test_spec_sharp_key_diatonic() {
+        let chords = get_scale_diatonic_chords_internal("F＃");
+        assert_eq!(chords, vec!["F＃", "G＃m", "A＃m", "B", "C＃", "D＃m", "E＃dim"]);
+    }
+
+    /// ♭キーのダイアトニック
+    #[test]
+    fn test_spec_flat_key_diatonic() {
+        assert_eq!(
+            get_scale_diatonic_chords_internal("B♭"),
+            vec!["B♭", "Cm", "Dm", "E♭", "F", "Gm", "Adim"]
+        );
+        assert_eq!(
+            get_scale_diatonic_chords_internal("E♭"),
+            vec!["E♭", "Fm", "Gm", "A♭", "B♭", "Cm", "Ddim"]
+        );
+    }
+
+    /// ペンタ/ブルース→空Vec
+    #[test]
+    fn test_spec_pentatonic_blues_no_diatonic() {
+        assert!(get_scale_diatonic_chords_internal("C_penta").is_empty());
+        assert!(get_scale_diatonic_chords_internal("C_m_penta").is_empty());
+        assert!(get_scale_diatonic_chords_internal("C_blues").is_empty());
+    }
 }

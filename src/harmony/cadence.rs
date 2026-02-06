@@ -80,4 +80,58 @@ mod tests {
         assert_eq!(functional_area(7), "D");
         assert_eq!(functional_area(0), "");
     }
+
+    // ===== 仕様ベーステスト =====
+
+    /// 全7パターン網羅
+    #[test]
+    fn test_spec_all_cadence_patterns() {
+        assert_eq!(cadence_text(5, 1), "Perfect Cadence");
+        assert_eq!(cadence_text(4, 1), "Plagal Cadence");
+        assert_eq!(cadence_text(7, 1), "Leading-tone Cadence");
+        assert_eq!(cadence_text(5, 6), "Deceptive Cadence");
+        assert_eq!(cadence_text(5, 4), "Interrupted Cadence");
+        // *→5 は全てHalf Cadence
+        assert_eq!(cadence_text(1, 5), "Half Cadence");
+        assert_eq!(cadence_text(2, 5), "Half Cadence");
+        assert_eq!(cadence_text(3, 5), "Half Cadence");
+        assert_eq!(cadence_text(4, 5), "Half Cadence");
+        assert_eq!(cadence_text(6, 5), "Half Cadence");
+        // *→7 は全てPhrygian Cadence
+        assert_eq!(cadence_text(1, 7), "Phrygian Cadence");
+        assert_eq!(cadence_text(4, 7), "Phrygian Cadence");
+        assert_eq!(cadence_text(2, 7), "Phrygian Cadence");
+    }
+
+    /// カデンツなし
+    #[test]
+    fn test_spec_cadence_no_match() {
+        assert_eq!(cadence_text(1, 2), "");
+        assert_eq!(cadence_text(3, 4), "");
+        assert_eq!(cadence_text(6, 2), "");
+        assert_eq!(cadence_text(0, 0), "");
+    }
+
+    /// ii-V-I 拡張
+    #[test]
+    fn test_spec_ii_v_i_extended() {
+        assert_eq!(cadence_text_extended(2, 5, 1), "ii-V-I Cadence");
+        // ii-V-I ではないのでフォールバック
+        assert_eq!(cadence_text_extended(3, 5, 1), "Perfect Cadence");
+        assert_eq!(cadence_text_extended(2, 5, 6), "Deceptive Cadence");
+    }
+
+    /// 全度数の機能分類
+    #[test]
+    fn test_spec_functional_area_all_degrees() {
+        assert_eq!(functional_area(1), "T");
+        assert_eq!(functional_area(2), "S");
+        assert_eq!(functional_area(3), "T");
+        assert_eq!(functional_area(4), "S");
+        assert_eq!(functional_area(5), "D");
+        assert_eq!(functional_area(6), "T");
+        assert_eq!(functional_area(7), "D");
+        assert_eq!(functional_area(0), "");
+        assert_eq!(functional_area(8), "");
+    }
 }

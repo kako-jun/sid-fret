@@ -176,4 +176,88 @@ mod tests {
         assert_eq!(fret_offset("B"), 7);
         assert_eq!(fret_offset("E♭"), 11);
     }
+
+    // ===== 仕様ベーステスト =====
+
+    #[test]
+    fn test_spec_enharmonic_semitones() {
+        // 全異名同音ペアの半音値一致
+        assert_eq!(note_to_semitone("B＃"), note_to_semitone("C"));
+        assert_eq!(note_to_semitone("C＃"), note_to_semitone("D♭"));
+        assert_eq!(note_to_semitone("D＃"), note_to_semitone("E♭"));
+        assert_eq!(note_to_semitone("E"), note_to_semitone("F♭"));
+        assert_eq!(note_to_semitone("F"), note_to_semitone("E＃"));
+        assert_eq!(note_to_semitone("F＃"), note_to_semitone("G♭"));
+        assert_eq!(note_to_semitone("G＃"), note_to_semitone("A♭"));
+        assert_eq!(note_to_semitone("A＃"), note_to_semitone("B♭"));
+        assert_eq!(note_to_semitone("B"), note_to_semitone("C♭"));
+
+        // 具体値の確認
+        assert_eq!(note_to_semitone("B＃"), Some(0));
+        assert_eq!(note_to_semitone("C＃"), Some(1));
+        assert_eq!(note_to_semitone("F♭"), Some(4));
+        assert_eq!(note_to_semitone("E＃"), Some(5));
+        assert_eq!(note_to_semitone("G♭"), Some(6));
+        assert_eq!(note_to_semitone("A♭"), Some(8));
+        assert_eq!(note_to_semitone("B♭"), Some(10));
+        assert_eq!(note_to_semitone("C♭"), Some(11));
+    }
+
+    #[test]
+    fn test_spec_compare_pitch_enharmonic_pairs() {
+        // 同一オクターブの異名同音ペア
+        assert!(compare_pitch("C＃1", "D♭1"));
+        assert!(compare_pitch("E＃1", "F1"));
+        assert!(compare_pitch("F♭1", "E1"));
+        assert!(compare_pitch("G＃2", "A♭2"));
+        assert!(compare_pitch("A＃2", "B♭2"));
+        assert!(compare_pitch("B＃1", "B＃1"));
+
+        // 異名同音でもオクターブ表記が異なると false
+        // B＃1 は octave=1, semi=0 → (1,0), C2 は octave=2, semi=0 → (2,0)
+        assert!(!compare_pitch("B＃1", "C2"));
+        // C♭2 は octave=2, semi=11 → (2,11), B1 は octave=1, semi=11 → (1,11)
+        assert!(!compare_pitch("C♭2", "B1"));
+    }
+
+    #[test]
+    fn test_spec_absolute_semitone_range() {
+        assert_eq!(absolute_semitone("C0"), Some(0));
+        assert_eq!(absolute_semitone("B0"), Some(11));
+        assert_eq!(absolute_semitone("E1"), Some(16));
+        assert_eq!(absolute_semitone("C＃3"), Some(37));
+        assert_eq!(absolute_semitone("D♭3"), Some(37)); // 異名同音
+        assert_eq!(absolute_semitone("A4"), Some(57));
+    }
+
+    #[test]
+    fn test_spec_fret_offset_all_roots() {
+        // 全12音のオフセット（E=0基準）
+        assert_eq!(fret_offset("E"), 0);
+        assert_eq!(fret_offset("F"), 1);
+        assert_eq!(fret_offset("F＃"), 2);
+        assert_eq!(fret_offset("G♭"), 2);
+        assert_eq!(fret_offset("G"), 3);
+        assert_eq!(fret_offset("G＃"), 4);
+        assert_eq!(fret_offset("A♭"), 4);
+        assert_eq!(fret_offset("A"), 5);
+        assert_eq!(fret_offset("A＃"), 6);
+        assert_eq!(fret_offset("B♭"), 6);
+        assert_eq!(fret_offset("B"), 7);
+        assert_eq!(fret_offset("C"), 8);
+        assert_eq!(fret_offset("C＃"), 9);
+        assert_eq!(fret_offset("D♭"), 9);
+        assert_eq!(fret_offset("D"), 10);
+        assert_eq!(fret_offset("D＃"), 11);
+        assert_eq!(fret_offset("E♭"), 11);
+    }
+
+    #[test]
+    fn test_spec_strip_octave_edge_cases() {
+        assert_eq!(strip_octave("C10"), "C");    // 2桁オクターブ
+        assert_eq!(strip_octave("B♭0"), "B♭");
+        assert_eq!(strip_octave("A"), "A");       // オクターブなし
+        assert_eq!(strip_octave("F＃3"), "F＃");
+        assert_eq!(strip_octave("G＃-1"), "G＃"); // 負のオクターブ
+    }
 }
