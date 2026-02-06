@@ -1,5 +1,5 @@
-use crate::chord::get_interval;
-use crate::scale::diatonic::create_diatonic_chord_map;
+use crate::instrument::fretboard::get_interval;
+use crate::harmony::diatonic::create_diatonic_chord_map;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -301,7 +301,8 @@ pub fn analyze_progression_internal(scale: &str, chords: &[String]) -> Vec<Progr
 /// セカンダリードミナント検出
 /// 非ダイアトニックのドミナント7thコードがダイアトニックコードのV7かを判定
 fn detect_secondary_dominant(chord: &str, diatonic_chords: &[&str]) -> (bool, String) {
-    use crate::chord::parser::{get_fret_offset, parse_chord_type};
+    use crate::core::chord_type::{get_root_note, parse_chord_type};
+    use crate::core::pitch::fret_offset;
 
     let (root, chord_type) = parse_chord_type(chord);
     if root.is_empty() {
@@ -309,21 +310,19 @@ fn detect_secondary_dominant(chord: &str, diatonic_chords: &[&str]) -> (bool, St
     }
 
     // ドミナント7thの構造を持つかチェック
-    let is_dom7 = chord_type == "7";
-    if !is_dom7 {
+    if chord_type != "7" {
         return (false, String::new());
     }
 
     // ルートの完全5度下（7半音下）がダイアトニックコードのルートに一致するか
-    let root_offset = get_fret_offset(&root);
-    let target_offset = (root_offset + 12 - 7) % 12; // 5度下
+    let root_offset = fret_offset(&root);
+    let target_offset = (root_offset + 12 - 7) % 12;
 
-    // ダイアトニック度数名
     let degree_names = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
     for (i, &diatonic) in diatonic_chords.iter().enumerate() {
-        let diatonic_root = crate::chord::parser::get_root_note(diatonic);
-        let diatonic_offset = get_fret_offset(&diatonic_root);
+        let diatonic_root = get_root_note(diatonic);
+        let diatonic_offset = fret_offset(&diatonic_root);
         if diatonic_offset == target_offset && i < degree_names.len() {
             let target = degree_names[i].to_lowercase();
             return (true, format!("V/{target}"));

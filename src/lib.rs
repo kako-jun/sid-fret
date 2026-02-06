@@ -1,16 +1,13 @@
 use wasm_bindgen::prelude::*;
 
-pub mod chord;
 pub mod core;
-pub mod fingering;
 pub mod harmony;
-pub mod scale;
+pub mod instrument;
 pub mod utils;
 
 #[wasm_bindgen(start)]
 pub fn init() {
     // パニック時のエラーメッセージを改善（開発時のみ）
-    // console_error_panic_hookが必要な場合はCargo.tomlに追加してください
 }
 
 #[wasm_bindgen]

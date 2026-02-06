@@ -11,38 +11,18 @@ pub fn get_chord_name_aliases(chord: &str) -> Vec<JsValue> {
 
 /// 内部用のalias取得関数
 fn get_chord_name_aliases_internal(chord: &str) -> Vec<String> {
-    // ルート音部分を抽出
-    let mut root = String::new();
-    let mut chars = chord.chars();
-
-    // 最初の文字（A-G）
-    if let Some(c) = chars.next() {
-        if ('A'..='G').contains(&c) {
-            root.push(c);
-        } else {
-            return vec![chord.to_string()];
-        }
-    } else {
+    let root = crate::core::chord_type::get_root_note(chord);
+    if root.is_empty() {
         return vec![chord.to_string()];
     }
-
-    // アクシデンタル（#, ＃, b, ♭）
-    if let Some(c) = chars.clone().next() {
-        if c == '#' || c == '＃' || c == 'b' || c == '♭' {
-            root.push(c);
-            chars.next();
-        }
-    }
-
-    // タイプ部分
-    let type_part: String = chars.collect();
+    let type_part = &chord[root.len()..];
 
     // 代表的なコードタイプの別表記マップ
     let type_alias_map = create_type_alias_map();
 
     // type部分がどれに該当するか判定
     for (key, aliases) in type_alias_map.iter() {
-        if &type_part == key {
+        if type_part == key {
             return aliases.iter().map(|a| format!("{root}{a}")).collect();
         }
     }

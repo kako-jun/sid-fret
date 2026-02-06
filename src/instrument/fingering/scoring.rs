@@ -85,7 +85,7 @@ impl AlgorithmWeights {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fingering::position::FretPosition;
+    use crate::instrument::fingering::position::FretPosition;
 
     #[test]
     fn test_weights_shortest() {
