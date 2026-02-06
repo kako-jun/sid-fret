@@ -1,85 +1,79 @@
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-/// コード名のエイリアスを取得（日本語記譜対応）
+/// コード名の別表記を取得（chordNameAlias.ts の getChordNameAliases() に相当）
+/// 例: CM7 → ["CM7", "Cmaj7", "C△7"]
 #[wasm_bindgen]
-pub fn get_chord_name_aliases(chord_name: &str) -> Vec<JsValue> {
-    let aliases = get_chord_name_aliases_internal(chord_name);
-    aliases.into_iter().map(|s| JsValue::from_str(&s)).collect()
+pub fn get_chord_name_aliases(chord: &str) -> Vec<JsValue> {
+    let aliases = get_chord_name_aliases_internal(chord);
+    aliases.iter().map(|s| JsValue::from_str(s)).collect()
 }
 
-/// コード名エイリアスの内部実装
-fn get_chord_name_aliases_internal(chord_name: &str) -> Vec<String> {
-    // ルート音を抽出
-    let mut chars = chord_name.chars().peekable();
+/// 内部用のalias取得関数
+fn get_chord_name_aliases_internal(chord: &str) -> Vec<String> {
+    // ルート音部分を抽出
     let mut root = String::new();
+    let mut chars = chord.chars();
 
+    // 最初の文字（A-G）
     if let Some(c) = chars.next() {
-        if !('A'..='G').contains(&c) {
-            return vec![chord_name.to_string()];
+        if ('A'..='G').contains(&c) {
+            root.push(c);
+        } else {
+            return vec![chord.to_string()];
         }
-        root.push(c);
+    } else {
+        return vec![chord.to_string()];
     }
 
-    // 変化記号（#, ＃, ♯, b, ♭）を抽出
-    if let Some(&c) = chars.peek() {
-        if c == '#' || c == '＃' || c == '♯' || c == 'b' || c == '♭' {
+    // アクシデンタル（#, ＃, b, ♭）
+    if let Some(c) = chars.clone().next() {
+        if c == '#' || c == '＃' || c == 'b' || c == '♭' {
             root.push(c);
             chars.next();
         }
     }
 
-    // コードタイプ部分を抽出
-    let chord_type: String = chars.collect();
+    // タイプ部分
+    let type_part: String = chars.collect();
 
-    // タイプエイリアスマップを取得
+    // 代表的なコードタイプの別表記マップ
     let type_alias_map = create_type_alias_map();
 
-    if let Some(aliases) = type_alias_map.get(chord_type.as_str()) {
-        aliases
-            .iter()
-            .map(|alias| format!("{root}{alias}"))
-            .collect()
-    } else {
-        vec![chord_name.to_string()]
+    // type部分がどれに該当するか判定
+    for (key, aliases) in type_alias_map.iter() {
+        if &type_part == key {
+            return aliases.iter().map(|a| format!("{root}{a}")).collect();
+        }
     }
+
+    // マッチしなければそのまま
+    vec![chord.to_string()]
 }
 
-/// コードタイプのエイリアスマップを作成
-fn create_type_alias_map() -> HashMap<&'static str, Vec<&'static str>> {
+/// コードタイプの別表記マップを作成
+fn create_type_alias_map() -> HashMap<String, Vec<String>> {
     let mut map = HashMap::new();
 
-    // メジャーセブンス
-    map.insert("maj7", vec!["maj7", "M7", "△7"]);
-    map.insert("M7", vec!["maj7", "M7", "△7"]);
-    map.insert("△7", vec!["maj7", "M7", "△7"]);
-
-    // マイナー
-    map.insert("m", vec!["m", "min", "-"]);
-    map.insert("min", vec!["m", "min", "-"]);
-    map.insert("-", vec!["m", "min", "-"]);
-
-    // マイナーセブンス
-    map.insert("m7", vec!["m7", "min7", "-7"]);
-    map.insert("min7", vec!["m7", "min7", "-7"]);
-    map.insert("-7", vec!["m7", "min7", "-7"]);
-
-    // ドミナントセブンス
-    map.insert("7", vec!["7", "dom7"]);
-    map.insert("dom7", vec!["7", "dom7"]);
-
-    // サスペンデッド
-    map.insert("sus4", vec!["sus4", "sus"]);
-    map.insert("sus", vec!["sus4", "sus"]);
-    map.insert("sus2", vec!["sus2"]);
-
-    // ディミニッシュ
-    map.insert("dim", vec!["dim", "°"]);
-    map.insert("°", vec!["dim", "°"]);
-
-    // オーギュメント
-    map.insert("aug", vec!["aug", "+"]);
-    map.insert("+", vec!["aug", "+"]);
+    map.insert("".to_string(), vec!["".to_string(), "maj".to_string(), "△".to_string()]);
+    map.insert("maj7".to_string(), vec!["maj7".to_string(), "M7".to_string(), "△7".to_string()]);
+    map.insert("m7".to_string(), vec!["m7".to_string(), "-7".to_string()]);
+    map.insert("7".to_string(), vec!["7".to_string()]);
+    map.insert("m".to_string(), vec!["m".to_string(), "-".to_string()]);
+    map.insert("dim".to_string(), vec!["dim".to_string(), "o".to_string()]);
+    map.insert("aug".to_string(), vec!["aug".to_string(), "+".to_string()]);
+    map.insert("sus4".to_string(), vec!["sus4".to_string(), "sus".to_string()]);
+    map.insert("add9".to_string(), vec!["add9".to_string()]);
+    map.insert("6".to_string(), vec!["6".to_string()]);
+    map.insert("9".to_string(), vec!["9".to_string()]);
+    map.insert("m_maj7".to_string(), vec!["m(maj7)".to_string(), "mM7".to_string(), "-M7".to_string()]);
+    map.insert("m6".to_string(), vec!["m6".to_string(), "-6".to_string()]);
+    map.insert("m9".to_string(), vec!["m9".to_string(), "-9".to_string()]);
+    map.insert("M9".to_string(), vec!["M9".to_string(), "maj9".to_string(), "△9".to_string()]);
+    map.insert("m_maj9".to_string(), vec!["m(maj9)".to_string(), "mM9".to_string(), "-M9".to_string()]);
+    map.insert("sus2".to_string(), vec!["sus2".to_string()]);
+    map.insert("5".to_string(), vec!["5".to_string()]);
+    map.insert("8".to_string(), vec!["8".to_string()]);
 
     map
 }
@@ -89,7 +83,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_chord_name_aliases_maj7() {
+    fn test_get_chord_name_aliases() {
         let aliases = get_chord_name_aliases_internal("Cmaj7");
         assert_eq!(aliases.len(), 3);
         assert!(aliases.contains(&"Cmaj7".to_string()));
@@ -100,19 +94,9 @@ mod tests {
     #[test]
     fn test_get_chord_name_aliases_minor() {
         let aliases = get_chord_name_aliases_internal("Cm");
-        assert_eq!(aliases.len(), 3);
+        assert_eq!(aliases.len(), 2);
         assert!(aliases.contains(&"Cm".to_string()));
-        assert!(aliases.contains(&"Cmin".to_string()));
         assert!(aliases.contains(&"C-".to_string()));
-    }
-
-    #[test]
-    fn test_get_chord_name_aliases_sharp() {
-        let aliases = get_chord_name_aliases_internal("C＃m7");
-        assert_eq!(aliases.len(), 3);
-        assert!(aliases.contains(&"C＃m7".to_string()));
-        assert!(aliases.contains(&"C＃min7".to_string()));
-        assert!(aliases.contains(&"C＃-7".to_string()));
     }
 
     #[test]

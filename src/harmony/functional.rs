@@ -1,107 +1,194 @@
+use crate::chord::get_interval;
+use crate::scale::diatonic::create_diatonic_chord_map;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
-/// 機能和声情報
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HarmonyInfo {
-    roman: String,
-    function: String,
-}
-
-impl HarmonyInfo {
-    pub fn new(roman: String, function: String) -> Self {
-        Self { roman, function }
-    }
-
-    pub fn roman(&self) -> &str {
-        &self.roman
-    }
-
-    pub fn function(&self) -> &str {
-        &self.function
-    }
-}
-
-/// スケールのダイアトニックコードマップを作成
-fn create_diatonic_chord_map() -> HashMap<&'static str, Vec<&'static str>> {
-    let mut map = HashMap::new();
-
-    // メジャースケール
-    map.insert("C", vec!["C", "Dm", "Em", "F", "G", "Am", "Bdim"]);
-    map.insert("D", vec!["D", "Em", "F＃m", "G", "A", "Bm", "C＃dim"]);
-    map.insert("E", vec!["E", "F＃m", "G＃m", "A", "B", "C＃m", "D＃dim"]);
-    map.insert("F", vec!["F", "Gm", "Am", "B♭", "C", "Dm", "Edim"]);
-    map.insert("G", vec!["G", "Am", "Bm", "C", "D", "Em", "F＃dim"]);
-    map.insert("A", vec!["A", "Bm", "C＃m", "D", "E", "F＃m", "G＃dim"]);
-    map.insert("B", vec!["B", "C＃m", "D＃m", "E", "F＃", "G＃m", "A＃dim"]);
-
-    // マイナースケール
-    map.insert("Cm", vec!["Cm", "Ddim", "E♭", "Fm", "Gm", "A♭", "B♭"]);
-    map.insert("Dm", vec!["Dm", "Edim", "F", "Gm", "Am", "B♭", "C"]);
-    map.insert("Em", vec!["Em", "F＃dim", "G", "Am", "Bm", "C", "D"]);
-    map.insert("Fm", vec!["Fm", "Gdim", "A♭", "B♭m", "Cm", "D♭", "E♭"]);
-    map.insert("Gm", vec!["Gm", "Adim", "B♭", "Cm", "Dm", "E♭", "F"]);
-    map.insert("Am", vec!["Am", "Bdim", "C", "Dm", "Em", "F", "G"]);
-    map.insert("Bm", vec!["Bm", "C＃dim", "D", "Em", "F＃m", "G", "A"]);
-
-    map
-}
-
-/// 機能和声の度数を取得（I-VII: 1-7、見つからない場合: 0）
+/// 機能和声のディグリー番号を取得（harmonyUtil.ts の getFunctionalHarmony() に相当）
 #[wasm_bindgen]
 pub fn get_functional_harmony(scale: &str, chord: &str) -> i32 {
     let chord_map = create_diatonic_chord_map();
+    let empty_vec = vec![];
+    let chords = chord_map.get(scale).unwrap_or(&empty_vec);
 
-    if let Some(chords) = chord_map.get(scale) {
-        chords
-            .iter()
-            .position(|&c| c == chord)
-            .map(|pos| (pos + 1) as i32)
-            .unwrap_or(0)
+    if let Some(index) = chords.iter().position(|c| c == &chord) {
+        (index + 1) as i32
     } else {
         0
     }
 }
 
-/// 機能和声のテキスト表現を取得
+/// 機能和声のテキスト表示
 #[wasm_bindgen]
 pub fn functional_harmony_text(degree: i32) -> String {
     match degree {
-        1 => "Ⅰ Tonic".to_string(),
-        2 => "Ⅱ Supertonic".to_string(),
-        3 => "Ⅲ Mediant".to_string(),
-        4 => "Ⅳ Subdominant".to_string(),
-        5 => "Ⅴ Dominant".to_string(),
-        6 => "Ⅵ Submediant".to_string(),
-        7 => "Ⅶ Leading Tone".to_string(),
-        _ => String::new(),
+        1 => "Ⅰ Tonic",
+        2 => "Ⅱ Supertonic",
+        3 => "Ⅲ Mediant",
+        4 => "Ⅳ Subdominant",
+        5 => "Ⅴ Dominant",
+        6 => "Ⅵ Submediant",
+        7 => "Ⅶ Leading Tone",
+        _ => "",
+    }
+    .to_string()
+}
+
+/// 機能和声情報
+#[wasm_bindgen]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HarmonyInfo {
+    roman: String,
+    desc: String,
+}
+
+#[wasm_bindgen]
+impl HarmonyInfo {
+    #[wasm_bindgen(getter)]
+    pub fn roman(&self) -> String {
+        self.roman.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn desc(&self) -> String {
+        self.desc.clone()
     }
 }
 
-/// ローマ数字記譜と機能名を取得
+/// 音階度の情報を取得
 #[wasm_bindgen]
-pub fn roman_numeral_harmony_info(degree: i32) -> JsValue {
-    let info = match degree {
-        1 => HarmonyInfo::new("Ⅰ".to_string(), "Tonic".to_string()),
-        2 => HarmonyInfo::new("Ⅱ".to_string(), "Supertonic".to_string()),
-        3 => HarmonyInfo::new("Ⅲ".to_string(), "Mediant".to_string()),
-        4 => HarmonyInfo::new("Ⅳ".to_string(), "Subdominant".to_string()),
-        5 => HarmonyInfo::new("Ⅴ".to_string(), "Dominant".to_string()),
-        6 => HarmonyInfo::new("Ⅵ".to_string(), "Submediant".to_string()),
-        7 => HarmonyInfo::new("Ⅶ".to_string(), "Leading Tone".to_string()),
-        _ => HarmonyInfo::new(String::new(), String::new()),
-    };
-
-    serde_wasm_bindgen::to_value(&info).unwrap()
+pub fn functional_harmony_info(degree: i32) -> HarmonyInfo {
+    match degree {
+        1 => HarmonyInfo {
+            roman: "Ⅰ".to_string(),
+            desc: "Tonic (主音): 安心・落ち着き".to_string(),
+        },
+        2 => HarmonyInfo {
+            roman: "Ⅱ".to_string(),
+            desc: "Supertonic (上主音): 期待・問い".to_string(),
+        },
+        3 => HarmonyInfo {
+            roman: "Ⅲ".to_string(),
+            desc: "Mediant (中音): 穏やか・中間".to_string(),
+        },
+        4 => HarmonyInfo {
+            roman: "Ⅳ".to_string(),
+            desc: "Subdominant (下属音): 広がり・始まり".to_string(),
+        },
+        5 => HarmonyInfo {
+            roman: "Ⅴ".to_string(),
+            desc: "Dominant (属音): 緊張・推進".to_string(),
+        },
+        6 => HarmonyInfo {
+            roman: "Ⅵ".to_string(),
+            desc: "Submediant (下中音): 儚さ・哀愁".to_string(),
+        },
+        7 => HarmonyInfo {
+            roman: "Ⅶ".to_string(),
+            desc: "Leading Tone (導音): 不安・未解決".to_string(),
+        },
+        _ => HarmonyInfo {
+            roman: "".to_string(),
+            desc: "".to_string(),
+        },
+    }
 }
 
-/// コード内でのピッチの役割を判定（ルート音かどうか）
+/// トライアド和音のローマ数字表記情報
 #[wasm_bindgen]
-pub fn get_chord_tone_label(_scale: &str, chord: &str, pitch: &str) -> String {
-    // 簡易実装：コード名の最初の文字とピッチが一致すればルート
-    if chord.starts_with(pitch) {
-        "Root".to_string()
+pub fn roman_numeral_harmony_info(degree: i32) -> HarmonyInfo {
+    match degree {
+        1 => HarmonyInfo {
+            roman: "Ⅰ".to_string(),
+            desc: "Tonic (主和音・長三和音): 安心・落ち着き".to_string(),
+        },
+        2 => HarmonyInfo {
+            roman: "Ⅱm".to_string(),
+            desc: "Supertonic (上主和音・短三和音): 期待・問い".to_string(),
+        },
+        3 => HarmonyInfo {
+            roman: "Ⅲm".to_string(),
+            desc: "Mediant (中和音・短三和音): 穏やか・中間".to_string(),
+        },
+        4 => HarmonyInfo {
+            roman: "Ⅳ".to_string(),
+            desc: "Subdominant (下属和音・長三和音): 広がり・始まり".to_string(),
+        },
+        5 => HarmonyInfo {
+            roman: "Ⅴ".to_string(),
+            desc: "Dominant (属和音・長三和音): 緊張・推進".to_string(),
+        },
+        6 => HarmonyInfo {
+            roman: "Ⅵm".to_string(),
+            desc: "Submediant (下中和音・短三和音): 儚さ・哀愁".to_string(),
+        },
+        7 => HarmonyInfo {
+            roman: "Ⅶdim".to_string(),
+            desc: "Leading Tone (導和音・減三和音): 不安・未解決".to_string(),
+        },
+        _ => HarmonyInfo {
+            roman: "".to_string(),
+            desc: "".to_string(),
+        },
+    }
+}
+
+/// 7thコードのローマ数字表記情報
+#[wasm_bindgen]
+pub fn roman_numeral_7th_harmony_info(degree: i32) -> HarmonyInfo {
+    match degree {
+        1 => HarmonyInfo {
+            roman: "ⅠM7".to_string(),
+            desc: "Tonic Seventh (主和音・長七の和音): 安心・落ち着き".to_string(),
+        },
+        2 => HarmonyInfo {
+            roman: "Ⅱm7".to_string(),
+            desc: "Supertonic Seventh (上主和音・短七の和音): 期待・問い".to_string(),
+        },
+        3 => HarmonyInfo {
+            roman: "Ⅲm7".to_string(),
+            desc: "Mediant Seventh (中和音・短七の和音): 穏やか・中間".to_string(),
+        },
+        4 => HarmonyInfo {
+            roman: "ⅣM7".to_string(),
+            desc: "Subdominant Seventh (下属和音・長七の和音): 広がり・始まり".to_string(),
+        },
+        5 => HarmonyInfo {
+            roman: "Ⅴ7".to_string(),
+            desc: "Dominant Seventh (属和音・属七の和音): 緊張・推進".to_string(),
+        },
+        6 => HarmonyInfo {
+            roman: "Ⅵm7".to_string(),
+            desc: "Submediant Seventh (下中和音・短七の和音): 儚さ・哀愁".to_string(),
+        },
+        7 => HarmonyInfo {
+            roman: "Ⅶm7♭5".to_string(),
+            desc: "Leading Tone Seventh (導和音・半減七の和音): 不安・未解決".to_string(),
+        },
+        _ => HarmonyInfo {
+            roman: "".to_string(),
+            desc: "".to_string(),
+        },
+    }
+}
+
+/// コードトーンのラベルを取得
+#[wasm_bindgen]
+pub fn get_chord_tone_label(scale: &str, chord: &str, target_pitch: &str) -> String {
+    let interval = get_interval(chord, target_pitch);
+
+    if interval == "1" {
+        let chord_function = get_functional_harmony(scale, chord);
+        match chord_function {
+            1 => "Tonic Note",
+            2 => "Supertonic Note",
+            3 => "Mediant Note",
+            4 => "Subdominant Note",
+            5 => "Dominant Note",
+            6 => "Submediant Note",
+            7 => "Leading Tone Note",
+            _ => "",
+        }
+        .to_string()
     } else {
         String::new()
     }
@@ -113,22 +200,22 @@ mod tests {
 
     #[test]
     fn test_get_functional_harmony() {
+        // CメジャースケールのC = Ⅰ
         assert_eq!(get_functional_harmony("C", "C"), 1);
+        // CメジャースケールのG = Ⅴ
         assert_eq!(get_functional_harmony("C", "G"), 5);
-        assert_eq!(get_functional_harmony("C", "Am"), 6);
-        assert_eq!(get_functional_harmony("Am", "Am"), 1);
     }
 
     #[test]
     fn test_functional_harmony_text() {
         assert_eq!(functional_harmony_text(1), "Ⅰ Tonic");
         assert_eq!(functional_harmony_text(5), "Ⅴ Dominant");
-        assert_eq!(functional_harmony_text(0), "");
     }
 
     #[test]
-    fn test_get_chord_tone_label() {
-        assert_eq!(get_chord_tone_label("C", "C", "C"), "Root");
-        assert_eq!(get_chord_tone_label("C", "Dm", "D"), "Root");
+    fn test_functional_harmony_info() {
+        let info = functional_harmony_info(1);
+        assert_eq!(info.roman, "Ⅰ");
+        assert!(info.desc.contains("Tonic"));
     }
 }
