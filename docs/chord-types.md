@@ -3,22 +3,23 @@
 ## 概要
 
 既存の `get_frets()` はboolean 6個方式（m3, sus4, dim5, maj7, m7, aug7）でコードを構成していたが、
-これを**コードタイプ文字列 → インターバル Vec<Fret> 直接生成**方式に置き換える。
+これを**コードタイプ文字列 → インターバル Vec<ChordTone> 直接生成**方式に置き換えた。
 
-旧 `get_frets(bool×6)` は廃止し、`get_frets(chord_type: &str) -> Vec<Fret>` に変更する。
+旧 `get_frets(bool×6)` は廃止し、`get_chord_tones(chord_type: &str) -> Vec<ChordTone>` に変更済み。
 
 ## 新規関数
 
-### `get_frets(chord_type: &str) -> Vec<Fret>`
+### `get_chord_tones(chord_type: &str) -> Vec<ChordTone>`
 
 コードタイプ文字列からインターバル配列を直接生成する。旧boolean方式を置き換え。
+モジュール: `core/chord_type.rs`（WASM非公開、内部ヘルパー）
 
 ```rust
-/// コードタイプ文字列からフレット配列を生成
+/// コードタイプ文字列から構成音配列を生成
 /// chord_type: "", "m", "7", "m7", "maj7", "dim", "aug", "sus4", "6", "m6",
 ///             "9", "m9", "maj9", "add9", "sus2", "dim7", "m7b5",
 ///             "aug7", "7sus4", "m_maj7", "7b9", "7#9"
-pub fn get_frets(chord_type: &str) -> Vec<Fret>
+pub fn get_chord_tones(chord_type: &str) -> Vec<ChordTone>
 ```
 
 ### `parse_chord_type(chord: &str) -> (&str, &str)`
@@ -71,35 +72,35 @@ map.insert("7#9".to_string(), vec!["7＃9".to_string(), "7#9".to_string()]);
 
 ## 破壊的変更
 
-- `get_frets(bool×6)` → 廃止。`get_frets(chord_type: &str) -> Vec<Fret>` に置き換え。
-- `get_chord_positions_internal()` — `parse_chord_type()` + `get_frets()` を使うようリファクタ。
+- `get_frets(bool×6)` → 廃止。`get_chord_tones(chord_type: &str) -> Vec<ChordTone>` に置き換え。
+- `get_chord_positions()` — `parse_chord_type()` + `get_chord_tones()` を使うようリファクタ。
 
 ## テスト追加
 
 ```rust
 #[test]
-fn test_get_frets() {
+fn test_get_chord_tones() {
     // 基本トライアド
-    let major = get_frets("");
+    let major = get_chord_tones("");
     assert_eq!(major.len(), 3);
-    assert_eq!(major[0].fret, 0); // root
-    assert_eq!(major[1].fret, 4); // 3rd
-    assert_eq!(major[2].fret, 7); // 5th
+    assert_eq!(major[0].semitones, 0); // root
+    assert_eq!(major[1].semitones, 4); // 3rd
+    assert_eq!(major[2].semitones, 7); // 5th
 
     // dim7（4音）
-    let dim7 = get_frets("dim7");
+    let dim7 = get_chord_tones("dim7");
     assert_eq!(dim7.len(), 4);
-    assert_eq!(dim7[3].fret, 9); // ♭♭7
+    assert_eq!(dim7[3].semitones, 9); // ♭♭7
 
     // 9th（5音）
-    let ninth = get_frets("9");
+    let ninth = get_chord_tones("9");
     assert_eq!(ninth.len(), 5);
-    assert_eq!(ninth[4].fret, 14); // 9
+    assert_eq!(ninth[4].semitones, 14); // 9
 
     // aug triad（3音）
-    let aug = get_frets("aug");
+    let aug = get_chord_tones("aug");
     assert_eq!(aug.len(), 3);
-    assert_eq!(aug[2].fret, 8); // ＃5
+    assert_eq!(aug[2].semitones, 8); // ＃5
 }
 
 #[test]

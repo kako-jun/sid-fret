@@ -12,29 +12,44 @@
 
 ```
 src/
-├── lib.rs              # エントリーポイント、WASM初期化
-├── chord/
-│   └── fret.rs         # ベースフレット計算、4弦マッピング
-├── fingering/
-│   ├── algorithm.rs    # 5種類の運指アルゴリズム
-│   ├── position.rs     # FretPosition, FingeringPattern
-│   └── scoring.rs      # スコアリング重み付け
-├── harmony/
-│   ├── functional.rs   # 機能和声分析（I-VII度数）
-│   └── cadence.rs      # カデンツ判定
-├── utils/
-│   ├── chromatic.rs    # 半音階判定
-│   └── chord_alias.rs  # コード名エイリアス
-├── core/               # rust-music-theoryへの委譲
-└── scale/              # rust-music-theoryへの委譲
+├── lib.rs                    # エントリーポイント、WASM初期化
+├── core/                     # 楽器非依存の音楽理論
+│   ├── pitch.rs              # 音名・ピッチの統一基盤（12音配列、半音計算、異名同音比較）
+│   ├── interval.rs           # インターバル計算（半音距離、転回形判定）
+│   ├── chord_type.rs         # コード構成音定義（22コードタイプ、ChordTone構造体）
+│   └── scale_type.rs         # スケール定義（12スケール、48キーマップ）
+├── harmony/                  # 和声理論（楽器非依存）
+│   ├── diatonic.rs           # ダイアトニックコード生成（triad + 7th）
+│   ├── functional.rs         # 機能和声分析（I-VII度数、進行分析）
+│   └── cadence.rs            # カデンツ判定（7パターン + 3コード拡張）
+├── instrument/               # ベースギター固有
+│   ├── tuning.rs             # チューニング定義（4プリセット）
+│   ├── fretboard.rs          # フレットボード計算（Position、ポジション生成）
+│   └── fingering/            # 運指アルゴリズム
+│       ├── algorithm.rs      # 5種類の運指アルゴリズム
+│       ├── position.rs       # FretPosition, FingeringPattern
+│       └── scoring.rs        # スコアリング重み付け
+└── utils/                    # ユーティリティ
+    ├── chromatic.rs           # 半音関係判定
+    ├── chord_alias.rs         # コード名エイリアス（別表記一覧）
+    └── notation.rs            # 表記ユーティリティ（get_line、value_text、scale_text）
 ```
+
+## 設計原則
+
+**「音楽理論」と「楽器固有」の分離**
+- `core/` — 楽器に依存しない音楽理論（ピッチ、インターバル、コード定義、スケール定義）
+- `harmony/` — 楽器に依存しない和声理論（ダイアトニック、機能和声、カデンツ）
+- `instrument/` — ベースギター固有の処理（フレットボード、チューニング、運指）
+- `utils/` — 表示・変換ユーティリティ
 
 ## 依存クレート
 
 - `wasm-bindgen` 0.2: WASM連携
 - `serde` 1.0 + `serde_json` 1.0: シリアライゼーション
 - `serde-wasm-bindgen` 0.6: WASM-JS間のデータ変換
-- `rust-music-theory` 0.2: 基本的な音楽理論（Note, Scale, Interval）
+
+外部の音楽理論ライブラリには依存せず、全て自前実装。
 
 ## アーキテクチャ
 
@@ -42,50 +57,45 @@ src/
 sid-note (TypeScript/Next.js)
     ↓ WASM import
 sid-fret (本ライブラリ)
-    ├── 独自実装: 運指、フレット計算、機能和声
-    └── rust-music-theory活用: Note, Scale, Interval
+    ├── core/      → 楽器非依存の音楽理論
+    ├── harmony/   → 和声理論
+    ├── instrument/ → ベースギター固有
+    └── utils/     → ユーティリティ
 ```
 
-sid-noteはsid-fretのみを呼ぶ。rust-music-theoryはsid-fret内部で使用。
+## 主要なデータ構造
+
+### ChordTone（core/chord_type.rs）
+```rust
+struct ChordTone {
+    interval: String,   // "1", "♭3", "5" 等
+    semitones: i32,     // 0, 3, 7 等
+}
+```
+
+### Position（instrument/fretboard.rs）
+```rust
+struct Position {
+    string: i32,       // 弦番号（1=最高音弦）
+    fret: i32,         // フレット番号（0=開放弦）
+    pitch: String,     // "C2", "G＃3" 等
+    interval: String,  // "1", "♭3" 等
+}
+```
+
+### Tuning（instrument/tuning.rs）
+```rust
+struct StringDef { open_note: String, offset: i32 }
+struct Tuning { name: String, strings: Vec<StringDef>, max_fret: i32 }
+```
 
 ## 運指アルゴリズム
-
-### データ構造
-
-```rust
-// 単一ポジション
-struct FretPosition {
-    string: u8,      // 1=G弦, 2=D弦, 3=A弦, 4=E弦
-    fret: u8,        // 0=開放弦
-    finger: Option<u8>, // 1-4 (人差し指-小指)
-}
-
-// 運指パターン
-struct FingeringPattern {
-    positions: Vec<FretPosition>,
-    score: f32,
-    algorithm: String,
-}
-```
-
-### アルゴリズム実装
 
 1. **shortest**: 前の音からの移動距離（フレット+弦）を最小化
 2. **position-stable**: 指定ポジション付近を維持
 3. **string-priority**: 弦移動を優先、フレット移動を避ける
 4. **open-string**: 開放弦（fret=0）を最優先
 5. **balanced**: 上記を試行し最もスコアが低いものを選択
-
-### スコアリング
-
-```rust
-struct AlgorithmWeights {
-    movement_weight: f32,        // 移動距離
-    position_change_weight: f32, // ポジション変更
-    open_string_weight: f32,     // 開放弦使用（負の重み=ボーナス）
-    string_change_weight: f32,   // 弦移動
-}
-```
 
 ## ベースフレット計算
 
@@ -100,38 +110,14 @@ struct AlgorithmWeights {
 
 ### ルート音オフセット
 
-```rust
-"C" => 0, "C#" => 1, "D" => 2, ... "B" => 11
-```
-
-日本語記号（＃、♭）にも対応。
-
-## 機能和声分析
-
-### ダイアトニックコード
-
-24キー対応（12メジャー + 12マイナー）
-
-```rust
-"C"  => ["C", "Dm", "Em", "F", "G", "Am", "Bdim"]
-"Am" => ["Am", "Bdim", "C", "Dm", "Em", "F", "G"]
-```
-
-### カデンツパターン
-
-| 進行 | 名称 |
-|------|------|
-| V → I | Perfect Cadence |
-| IV → I | Plagal Cadence |
-| V → VI | Deceptive Cadence |
-| * → V | Half Cadence |
+`fret_offset(root)` で計算: `(note_to_semitone(root) - 4 + 12) % 12`
 
 ## ビルド・テスト
 
 ```bash
 cargo build           # デバッグビルド
 cargo build --release # リリースビルド
-cargo test            # テスト実行（29件）
+cargo test            # テスト実行（56件）
 cargo clippy          # Lint
 cargo fmt             # フォーマット
 
@@ -156,12 +142,7 @@ lto = true       # Link Time Optimization
 
 ## 将来の拡張
 
-### Phase 2: 高度な運指最適化
+### 高度な運指最適化
 - スライド優先アルゴリズム
 - フレーズ指向（グループ化）アルゴリズム
 - 指の負担分散アルゴリズム
-
-### Phase 3: 多様な楽器対応
-- 5弦/6弦ベース対応
-- カスタムチューニング（Drop D等）
-- フレットレスベース対応

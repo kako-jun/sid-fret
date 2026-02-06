@@ -102,9 +102,9 @@ pub fn detect_inversion(chord: &str, bass_pitch: &str) -> i32
 #### 転回形判定ロジック
 
 1. `parse_chord_type()` でコードのルート音とタイプを取得
-2. `get_frets_from_type()` でインターバル配列を取得
+2. `get_chord_tones()` でインターバル配列を取得
 3. バス音の音名（オクターブ除去）を取得
-4. ルート音からの各構成音の音名を `get_pitch_map()` で逆引き
+4. ルート音からの各構成音の音名を `pitch_map_for_root()` で逆引き
 5. バス音がN番目の構成音に一致する場合、N を返す（0=基本形）
 6. 一致しない場合 -1 を返す
 
@@ -112,9 +112,11 @@ pub fn detect_inversion(chord: &str, bass_pitch: &str) -> i32
 
 ```
 src/core/
-├── note.rs       # 既存（変更なし）
-├── interval.rs   # 新規
-└── mod.rs        # interval追加
+├── pitch.rs        # 音名・ピッチ基盤
+├── chord_type.rs   # コード解析
+├── scale_type.rs   # スケール定義
+├── interval.rs     # インターバル計算
+└── mod.rs
 ```
 
 ## 互換性

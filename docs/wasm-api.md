@@ -21,16 +21,27 @@
 | `init()` | `() -> ()` | WASM初期化（自動呼び出し） |
 | `version()` | `() -> String` | パッケージバージョン |
 
-### core/note — 音符ユーティリティ
+### core/pitch — ピッチ基盤
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
-| `get_line(pitch)` | `(&str) -> Option<f32>` | 五線譜のライン番号 |
-| `get_key_position(scale)` | `(&str) -> KeyPosition` | 五度圏での位置 |
+| `fret_offset(root)` | `(&str) -> i32` | フレットオフセット（E=0基準） |
 | `compare_pitch(p1, p2)` | `(&str, &str) -> bool` | 異名同音比較 |
-| `value_text(value)` | `(&str) -> String` | 音符テキスト |
 
-### core/interval — インターバル計算 (NEW)
+### core/chord_type — コード解析
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `get_root_note(chord)` | `(&str) -> String` | コード名からルート音を抽出 |
+
+#### 内部関数（WASM非公開）
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `get_chord_tones(chord_type)` | `(&str) -> Vec<ChordTone>` | コードタイプ→構成音配列 |
+| `parse_chord_type(chord)` | `(&str) -> (String, String)` | コード名→(ルート, タイプ)分離 |
+
+### core/interval — インターバル計算
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
@@ -38,38 +49,18 @@
 | `interval_name(semitones)` | `(i32) -> String` | 半音数→インターバル名（P1, M3, P5等） |
 | `detect_inversion(chord, bass)` | `(&str, &str) -> i32` | 転回形判定（0-3, -1=非構成音） |
 
-### chord/parser — コード解析
-
-| 関数 | シグネチャ | 説明 |
-|------|-----------|------|
-| `get_root_note(chord)` | `(&str) -> String` | コード名からルート音を抽出 |
-| `get_fret_offset(root)` | `(&str) -> i32` | フレットオフセット（E=0基準） |
-
-#### 内部関数（WASM非公開）
-
-| 関数 | シグネチャ | 説明 |
-|------|-----------|------|
-| `get_frets(chord_type)` | `(&str) -> Vec<Fret>` | コードタイプ→インターバル配列 |
-| `parse_chord_type(chord)` | `(&str) -> (String, String)` | コード名→(ルート, タイプ)分離 |
-
-### chord/positions — ポジション計算
-
-| 関数 | シグネチャ | 説明 |
-|------|-----------|------|
-| `get_chord_positions(chord)` | `(&str) -> JsValue` | コードの全ポジション（4弦デフォルト） |
-| `get_chord_positions_with_tuning(chord, tuning)` | `(&str, &str) -> JsValue` | チューニング指定付きポジション (NEW) |
-| `get_interval(chord, pitch)` | `(&str, &str) -> String` | インターバル記号 |
-| `get_tuning_info(tuning_name)` | `(&str) -> JsValue` | チューニング情報 (NEW) |
-| `list_tunings()` | `() -> JsValue` | プリセット一覧 (NEW) |
-
-### scale/diatonic — スケール・ダイアトニック
+### core/scale_type — スケール定義
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
 | `get_scale_note_names(scale)` | `(&str) -> Vec<JsValue>` | スケール構成音 |
+
+### harmony/diatonic — ダイアトニックコード
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
 | `get_scale_diatonic_chords(scale)` | `(&str) -> Vec<JsValue>` | ダイアトニックコード（トライアド） |
 | `get_scale_diatonic_chords_with_7th(scale)` | `(&str) -> Vec<JsValue>` | ダイアトニックコード（7th） |
-| `scale_text(scale)` | `(&str) -> String` | スケール名英語表記 |
 
 ### harmony/functional — 機能和声
 
@@ -81,28 +72,52 @@
 | `roman_numeral_harmony_info(degree)` | `(i32) -> HarmonyInfo` | トライアドのローマ数字 |
 | `roman_numeral_7th_harmony_info(degree)` | `(i32) -> HarmonyInfo` | 7thのローマ数字 |
 | `get_chord_tone_label(scale, chord, pitch)` | `(&str, &str, &str) -> String` | コードトーンラベル |
-| `analyze_progression(scale, chords)` | `(&str, Vec<JsValue>) -> JsValue` | 進行分析 (NEW) |
+| `analyze_progression(scale, chords)` | `(&str, Vec<JsValue>) -> JsValue` | 進行分析 |
 
 ### harmony/cadence — カデンツ
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
-| `cadence_text(prev, current)` | `(i32, i32) -> String` | カデンツ判定（7パターン） (EXPANDED) |
-| `cadence_text_extended(prev2, prev, current)` | `(i32, i32, i32) -> String` | 3コードカデンツ (NEW) |
-| `functional_area(degree)` | `(i32) -> String` | T/S/D機能分類 (NEW) |
+| `cadence_text(prev, current)` | `(i32, i32) -> String` | カデンツ判定（7パターン） |
+| `cadence_text_extended(prev2, prev, current)` | `(i32, i32, i32) -> String` | 3コードカデンツ |
+| `functional_area(degree)` | `(i32) -> String` | T/S/D機能分類 |
 
-### utils — ユーティリティ
+### instrument/fretboard — フレットボード計算
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
-| `is_chromatic_note(pitch, next)` | `(Option<String>, Option<String>) -> bool` | 半音関係判定 |
-| `get_chord_name_aliases(chord)` | `(&str) -> Vec<JsValue>` | コード名の別表記一覧 |
+| `get_chord_positions(chord)` | `(&str) -> JsValue` | コードの全ポジション（4弦デフォルト） |
+| `get_chord_positions_with_tuning(chord, tuning)` | `(&str, &str) -> JsValue` | チューニング指定付きポジション |
+| `get_interval(chord, pitch)` | `(&str, &str) -> String` | インターバル記号 |
+| `get_tuning_info(tuning_name)` | `(&str) -> JsValue` | チューニング情報 |
+| `list_tunings()` | `() -> JsValue` | プリセット一覧 |
 
-### fingering — 運指アルゴリズム
+### instrument/fingering — 運指アルゴリズム
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
 | `calculate_fingering(pitches, mode)` | `(Vec<u8>, &str) -> JsValue` | 運指パターン計算 |
+
+### utils/chromatic — 半音関係
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `is_chromatic_note(pitch, next)` | `(Option<String>, Option<String>) -> bool` | 半音関係判定 |
+
+### utils/chord_alias — コード別表記
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `get_chord_name_aliases(chord)` | `(&str) -> Vec<JsValue>` | コード名の別表記一覧 |
+
+### utils/notation — 表記ユーティリティ
+
+| 関数 | シグネチャ | 説明 |
+|------|-----------|------|
+| `get_line(pitch)` | `(&str) -> Option<f32>` | 五線譜のライン番号（E1=0.0基準、計算生成） |
+| `get_key_position(scale)` | `(&str) -> KeyPosition` | 五度圏での位置 |
+| `value_text(value)` | `(&str) -> String` | 音符テキスト |
+| `scale_text(scale)` | `(&str) -> String` | スケール名英語表記 |
 
 ---
 
@@ -134,7 +149,7 @@ interface HarmonyInfo {
 }
 ```
 
-### ProgressionInfo (NEW)
+### ProgressionInfo
 ```typescript
 interface ProgressionInfo {
   degree: number;              // スケール度数（1-7, 0=non-diatonic）
@@ -146,7 +161,7 @@ interface ProgressionInfo {
 }
 ```
 
-### Tuning (NEW)
+### Tuning
 ```typescript
 interface Tuning {
   name: string;
