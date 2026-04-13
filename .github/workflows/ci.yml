@@ -119,13 +119,13 @@ jobs:
         run: wasm-pack build --target nodejs --out-dir pkg-node
 
       - name: Upload WASM artifacts (web)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wasm-web
           path: pkg/
 
       - name: Upload WASM artifacts (nodejs)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wasm-nodejs
           path: pkg-node/
